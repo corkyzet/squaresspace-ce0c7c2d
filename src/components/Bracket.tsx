@@ -177,7 +177,7 @@ export function Bracket({ games, findOwner }: BracketProps) {
   return (
     <div className="p-4 space-y-6">
       <h2 className="font-mono-display text-sm uppercase tracking-widest text-primary flex items-center gap-2">
-        <span>Tournament Bracket</span>
+        <span>Tournament Results</span>
       </h2>
 
       {gamesByRound.map((roundGroup) => {
