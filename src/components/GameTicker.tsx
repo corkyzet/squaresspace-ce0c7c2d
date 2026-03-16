@@ -7,20 +7,62 @@ interface GameTickerProps {
   isRefreshing: boolean;
 }
 
+function formatGameTime(startTime: string | null): string {
+  if (!startTime) return "";
+  const d = new Date(startTime);
+  return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+}
+
+function formatGameDate(startTime: string | null): string {
+  if (!startTime) return "";
+  const d = new Date(startTime);
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+
+  if (d.toDateString() === today.toDateString()) return "Today";
+  if (d.toDateString() === tomorrow.toDateString()) return "Tomorrow";
+  return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+}
+
 export function GameTicker({ games, onRefresh, isRefreshing }: GameTickerProps) {
   // Filter out First Four games
   const mainGames = games.filter((g) => g.round?.toLowerCase() !== "first four");
+
+  // Group: live first, then today's games, then upcoming, then final
+  const now = new Date();
+  const todayStr = now.toDateString();
+
   const liveGames = mainGames.filter((g) => g.status === "Live");
+  const scheduledToday = mainGames.filter(
+    (g) => g.status === "Scheduled" && g.start_time && new Date(g.start_time).toDateString() === todayStr
+  );
+  const scheduledUpcoming = mainGames.filter(
+    (g) => g.status === "Scheduled" && g.start_time && new Date(g.start_time).toDateString() !== todayStr
+  );
   const finalGames = mainGames.filter((g) => g.status === "Final");
-  const scheduledGames = mainGames.filter((g) => g.status === "Scheduled");
-  const sortedGames = [...liveGames, ...finalGames, ...scheduledGames];
+
+  // Show: live → today scheduled → upcoming scheduled (only if no live/today) → recent finals
+  let tickerGames: Game[];
+  if (liveGames.length > 0 || scheduledToday.length > 0) {
+    tickerGames = [...liveGames, ...scheduledToday, ...finalGames.slice(-4)];
+  } else if (scheduledUpcoming.length > 0) {
+    tickerGames = [...scheduledUpcoming, ...finalGames.slice(-4)];
+  } else {
+    tickerGames = [...finalGames];
+  }
+
+  // Determine the date label for upcoming games
+  const upcomingDate = scheduledUpcoming.length > 0 && liveGames.length === 0 && scheduledToday.length === 0
+    ? formatGameDate(scheduledUpcoming[0].start_time)
+    : null;
 
   return (
     <div className="w-full bg-background/80 backdrop-blur-md border-b border-foreground/10">
       <div className="flex items-center h-12 px-4 gap-3">
         <div className="flex items-center gap-2 shrink-0 border-r border-foreground/10 pr-3">
           <span className="font-mono-display text-[10px] uppercase tracking-widest text-muted-foreground">
-            Scores
+            {upcomingDate ? upcomingDate : "Scores"}
           </span>
           <button
             onClick={onRefresh}
@@ -38,10 +80,10 @@ export function GameTicker({ games, onRefresh, isRefreshing }: GameTickerProps) 
 
         <div className="flex-1 overflow-x-auto scrollbar-hide">
           <div className="flex gap-6 min-w-max py-2">
-            {sortedGames.length === 0 && (
-              <span className="text-xs text-muted-foreground">No tournament games found. Scores auto-refresh every 60s.</span>
+            {tickerGames.length === 0 && (
+              <span className="text-xs text-muted-foreground">No tournament games scheduled. Scores auto-refresh every 60s.</span>
             )}
-            {sortedGames.map((game) => (
+            {tickerGames.map((game) => (
               <div key={game.id} className="flex items-center gap-2 shrink-0">
                 {game.status === "Live" && (
                   <span className="relative flex h-2 w-2">
@@ -51,9 +93,17 @@ export function GameTicker({ games, onRefresh, isRefreshing }: GameTickerProps) 
                 )}
                 <div className="flex items-center gap-1.5">
                   <span className="text-[11px] text-foreground/80 w-16 text-right truncate">{game.home_team}</span>
-                  <span className="font-mono-display text-xs font-semibold text-foreground">{game.home_score}</span>
-                  <span className="text-muted-foreground text-[10px]">-</span>
-                  <span className="font-mono-display text-xs font-semibold text-foreground">{game.away_score}</span>
+                  {game.status === "Scheduled" ? (
+                    <span className="font-mono-display text-[10px] text-muted-foreground px-1">
+                      {formatGameTime(game.start_time)}
+                    </span>
+                  ) : (
+                    <>
+                      <span className="font-mono-display text-xs font-semibold text-foreground">{game.home_score}</span>
+                      <span className="text-muted-foreground text-[10px]">-</span>
+                      <span className="font-mono-display text-xs font-semibold text-foreground">{game.away_score}</span>
+                    </>
+                  )}
                   <span className="text-[11px] text-foreground/80 w-16 truncate">{game.away_team}</span>
                 </div>
                 <span
@@ -65,7 +115,7 @@ export function GameTicker({ games, onRefresh, isRefreshing }: GameTickerProps) 
                       : "bg-muted text-muted-foreground"
                   }`}
                 >
-                  {game.status}
+                  {game.status === "Scheduled" ? formatGameDate(game.start_time) : game.status}
                 </span>
               </div>
             ))}
