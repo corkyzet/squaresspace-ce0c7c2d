@@ -6,10 +6,10 @@ interface SquaresGridProps {
   getWinCount: (w: number, l: number) => number;
   isAdmin: boolean;
   onCellClick: (w: number, l: number) => void;
-  highlightOwner: string | null;
+  highlightOwners: string[];
 }
 
-export function SquaresGrid({ findOwner, getWinCount, isAdmin, onCellClick, highlightOwner }: SquaresGridProps) {
+export function SquaresGrid({ findOwner, getWinCount, isAdmin, onCellClick, highlightOwners }: SquaresGridProps) {
   return (
     <div className="overflow-auto scrollbar-hide">
       <div className="min-w-[500px] p-4">
