@@ -73,6 +73,8 @@ function parseEvent(event: any) {
     away_team: awayTeam,
     home_score: homeScore,
     away_score: awayScore,
+    home_seed: homeSeed,
+    away_seed: awaySeed,
     status,
     round,
     start_time: startTime,
