@@ -7,13 +7,13 @@ interface SquareCellProps {
   winCount: number;
   isAdmin: boolean;
   onCellClick: (w: number, l: number) => void;
-  highlightOwner: string | null;
+  highlightOwners: string[];
 }
 
-export function SquareCell({ winDigit, loseDigit, owner, winCount, isAdmin, onCellClick, highlightOwner }: SquareCellProps) {
+export function SquareCell({ winDigit, loseDigit, owner, winCount, isAdmin, onCellClick, highlightOwners }: SquareCellProps) {
   const isWinner = winCount > 0;
   const isEmpty = !owner;
-  const isHighlighted = highlightOwner && owner === highlightOwner;
+  const isHighlighted = highlightOwners.length > 0 && owner != null && highlightOwners.includes(owner);
 
   return (
     <motion.button

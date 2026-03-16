@@ -3,10 +3,10 @@ import { Trophy } from "lucide-react";
 interface LeaderboardProps {
   leaderboard: { name: string; wins: number; money: number }[];
   onSelectPlayer: (name: string | null) => void;
-  highlightOwner: string | null;
+  highlightOwners: string[];
 }
 
-export function Leaderboard({ leaderboard, onSelectPlayer, highlightOwner }: LeaderboardProps) {
+export function Leaderboard({ leaderboard, onSelectPlayer, highlightOwners }: LeaderboardProps) {
   return (
     <div className="w-full lg:w-56 border-t lg:border-t-0 lg:border-l border-foreground/10 bg-background/50 p-3">
       <h2 className="font-mono-display text-xs uppercase tracking-widest text-primary mb-3 flex items-center gap-2">
@@ -30,10 +30,10 @@ export function Leaderboard({ leaderboard, onSelectPlayer, highlightOwner }: Lea
         {leaderboard.map((entry, i) => (
           <button
             key={entry.name}
-            onClick={() => onSelectPlayer(highlightOwner === entry.name ? null : entry.name)}
+            onClick={() => onSelectPlayer(entry.name)}
             className={`
               w-full flex items-center justify-between px-2 py-1.5 rounded-sm text-xs transition-all
-              ${highlightOwner === entry.name
+              ${highlightOwners.includes(entry.name)
                 ? "bg-accent/10 ring-1 ring-accent/40 gold-glow"
                 : "hover:bg-foreground/5"
               }
