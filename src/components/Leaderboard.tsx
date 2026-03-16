@@ -1,7 +1,7 @@
 import { Trophy } from "lucide-react";
 
 interface LeaderboardProps {
-  leaderboard: { name: string; wins: number }[];
+  leaderboard: { name: string; wins: number; money: number }[];
   onSelectPlayer: (name: string | null) => void;
   highlightOwner: string | null;
 }
@@ -13,7 +13,17 @@ export function Leaderboard({ leaderboard, onSelectPlayer, highlightOwner }: Lea
         <Trophy className="w-3 h-3" />
         Leaderboard
       </h2>
-      <div className="space-y-1">
+
+      {/* Column headers */}
+      <div className="flex items-center justify-between px-2 pb-1 mb-1 border-b border-foreground/10">
+        <span className="text-[9px] font-mono-display uppercase tracking-wider text-muted-foreground">Player</span>
+        <div className="flex items-center gap-3">
+          <span className="text-[9px] font-mono-display uppercase tracking-wider text-muted-foreground w-6 text-center">W</span>
+          <span className="text-[9px] font-mono-display uppercase tracking-wider text-muted-foreground w-12 text-right">$</span>
+        </div>
+      </div>
+
+      <div className="space-y-0.5">
         {leaderboard.length === 0 && (
           <p className="text-xs text-muted-foreground">No wins yet.</p>
         )}
@@ -29,13 +39,18 @@ export function Leaderboard({ leaderboard, onSelectPlayer, highlightOwner }: Lea
               }
             `}
           >
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
               <span className="font-mono-display text-[10px] text-muted-foreground w-4 shrink-0">{i + 1}.</span>
               <span className="text-foreground truncate">{entry.name}</span>
             </div>
-            <span className="font-mono-display text-[10px] text-primary font-semibold shrink-0 ml-1">
-              {entry.wins}W
-            </span>
+            <div className="flex items-center gap-3 shrink-0">
+              <span className="font-mono-display text-[10px] text-primary font-semibold w-6 text-center">
+                {entry.wins}
+              </span>
+              <span className="font-mono-display text-[10px] text-accent font-semibold w-12 text-right">
+                {entry.money > 0 ? `$${entry.money.toLocaleString()}` : "—"}
+              </span>
+            </div>
           </button>
         ))}
       </div>
