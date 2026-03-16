@@ -1,0 +1,2 @@
+
+ALTER TABLE public.games ADD COLUMN start_time TIMESTAMP WITH TIME ZONE;
