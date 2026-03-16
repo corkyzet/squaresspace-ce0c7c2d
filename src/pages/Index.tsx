@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useSquares } from "@/hooks/useSquares";
 import { GameTicker } from "@/components/GameTicker";
 import { SquaresGrid } from "@/components/SquaresGrid";
+import { Bracket } from "@/components/Bracket";
 import { Leaderboard } from "@/components/Leaderboard";
 import { AdminModal } from "@/components/AdminModal";
 import { Shield, ShieldOff } from "lucide-react";
