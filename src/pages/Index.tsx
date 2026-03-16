@@ -82,6 +82,11 @@ const Index = () => {
         />
       </div>
 
+      {/* Bracket */}
+      <div className="border-t border-foreground/10">
+        <Bracket games={games} findOwner={findOwner} />
+      </div>
+
       {editCell && (
         <AdminModal
           open={!!editCell}
