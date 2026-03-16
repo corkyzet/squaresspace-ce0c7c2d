@@ -22,7 +22,7 @@ export function Leaderboard({ leaderboard, onSelectPlayer, highlightOwner }: Lea
             key={entry.name}
             onClick={() => onSelectPlayer(highlightOwner === entry.name ? null : entry.name)}
             className={`
-              w-full flex items-center justify-between px-3 py-2 rounded-sm text-sm transition-all
+              w-full flex items-center justify-between px-2 py-1.5 rounded-sm text-xs transition-all
               ${highlightOwner === entry.name
                 ? "bg-accent/10 ring-1 ring-accent/40 gold-glow"
                 : "hover:bg-foreground/5"
