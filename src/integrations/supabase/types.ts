@@ -14,7 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      games: {
+        Row: {
+          away_score: number
+          away_team: string
+          created_at: string
+          home_score: number
+          home_team: string
+          id: string
+          is_processed: boolean
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          away_score?: number
+          away_team: string
+          created_at?: string
+          home_score?: number
+          home_team: string
+          id?: string
+          is_processed?: boolean
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          away_score?: number
+          away_team?: string
+          created_at?: string
+          home_score?: number
+          home_team?: string
+          id?: string
+          is_processed?: boolean
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      squares: {
+        Row: {
+          created_at: string
+          id: string
+          lose_digit: number
+          owner_name: string | null
+          win_digit: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lose_digit: number
+          owner_name?: string | null
+          win_digit: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lose_digit?: number
+          owner_name?: string | null
+          win_digit?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
