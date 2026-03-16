@@ -51,7 +51,7 @@ const Index = () => {
       {/* Header */}
       <header className="border-b border-foreground/10 px-4 py-3 flex items-center justify-between">
         <h1 className="font-mono-display text-lg font-bold text-foreground tracking-tight">
-          MARCH MADNESS <span className="text-primary">SQUARES</span>
+          MARCH MADNESS <span className="text-primary">SQUARES 2026</span>
         </h1>
         <button
           onClick={() => setIsAdmin(!isAdmin)}
