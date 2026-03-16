@@ -9,8 +9,8 @@ interface LeaderboardProps {
 export function Leaderboard({ leaderboard, onSelectPlayer, highlightOwner }: LeaderboardProps) {
   return (
     <div className="w-full lg:w-56 border-t lg:border-t-0 lg:border-l border-foreground/10 bg-background/50 p-3">
-      <h2 className="font-mono-display text-sm uppercase tracking-widest text-primary mb-4 flex items-center gap-2">
-        <Trophy className="w-4 h-4" />
+      <h2 className="font-mono-display text-xs uppercase tracking-widest text-primary mb-3 flex items-center gap-2">
+        <Trophy className="w-3 h-3" />
         Leaderboard
       </h2>
       <div className="space-y-1">
