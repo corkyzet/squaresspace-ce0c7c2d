@@ -19,7 +19,7 @@ export function Leaderboard({ leaderboard, onSelectPlayer, highlightOwners }: Le
         <span className="text-[9px] font-mono-display uppercase tracking-wider text-muted-foreground">Player</span>
         <div className="flex items-center gap-3">
           <span className="text-[9px] font-mono-display uppercase tracking-wider text-muted-foreground w-6 text-center">Wins</span>
-          <span className="text-[9px] font-mono-display uppercase tracking-wider text-muted-foreground w-12 text-right">$</span>
+          <span className="text-[9px] font-mono-display uppercase tracking-wider text-muted-foreground w-12 text-right">Earnings</span>
         </div>
       </div>
 
