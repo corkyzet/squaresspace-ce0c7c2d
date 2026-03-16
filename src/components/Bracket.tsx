@@ -178,7 +178,7 @@ export function Bracket({ games, findOwner }: BracketProps) {
       </h2>
 
       {gamesByRound.map((roundGroup) => {
-        if (roundGroup.games.length === 0) return null;
+        if (roundGroup.games.length === 0 || roundGroup.key === "champ") return null;
 
         const showRegions = ["r64", "r32", "s16", "e8"].includes(roundGroup.key);
 
