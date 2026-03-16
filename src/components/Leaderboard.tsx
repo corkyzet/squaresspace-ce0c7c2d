@@ -33,8 +33,8 @@ export function Leaderboard({ leaderboard, onSelectPlayer, highlightOwner }: Lea
               <span className="font-mono-display text-[10px] text-muted-foreground w-4 shrink-0">{i + 1}.</span>
               <span className="text-foreground truncate">{entry.name}</span>
             </div>
-            <span className="font-mono-display text-xs text-primary font-semibold">
-              {entry.wins} {entry.wins === 1 ? "win" : "wins"}
+            <span className="font-mono-display text-[10px] text-primary font-semibold shrink-0 ml-1">
+              {entry.wins}W
             </span>
           </button>
         ))}

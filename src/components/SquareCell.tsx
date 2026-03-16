@@ -27,8 +27,8 @@ export function SquareCell({ winDigit, loseDigit, owner, winCount, isAdmin, onCe
       whileTap={{ scale: 0.98 }}
       onClick={() => isAdmin && onCellClick(winDigit, loseDigit)}
       className={`
-        aspect-square flex flex-col items-end justify-start p-1 rounded-sm
-        ring-1 ring-inset transition-all duration-200 relative overflow-hidden
+        aspect-square flex flex-col items-center justify-center rounded-sm
+        ring-1 ring-inset transition-all duration-200 relative overflow-hidden p-0.5
         ${isWinner
           ? "bg-primary/20 ring-primary/50 winner-glow"
           : isEmpty
@@ -40,16 +40,14 @@ export function SquareCell({ winDigit, loseDigit, owner, winCount, isAdmin, onCe
       `}
     >
       {owner && (
-        <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-foreground/80 leading-tight break-all text-right">
+        <span className="text-[7px] sm:text-[8px] leading-[1.15] text-foreground/80 text-center w-full overflow-hidden line-clamp-3">
           {owner}
         </span>
       )}
       {isWinner && (
-        <div className="absolute bottom-0.5 left-0.5 flex items-center gap-0.5">
-          <span className="text-[8px] sm:text-[9px] font-mono-display font-bold text-primary">
-            🏆×{winCount}
-          </span>
-        </div>
+        <span className="text-[7px] sm:text-[8px] font-mono-display font-bold text-primary mt-auto shrink-0">
+          🏆{winCount}
+        </span>
       )}
     </motion.button>
   );
