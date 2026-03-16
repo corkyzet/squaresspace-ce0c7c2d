@@ -59,7 +59,10 @@ function formatGameDate(startTime: string | null): string {
 }
 
 export function GameTicker({ games, onRefresh, isRefreshing }: GameTickerProps) {
-  const mainGames = games.filter((g) => g.round?.toLowerCase() !== "first four");
+  const mainGames = games.filter((g) =>
+    g.round?.toLowerCase() !== "first four" &&
+    g.home_team !== "TBD" && g.away_team !== "TBD"
+  );
 
   const now = new Date();
   const todayStr = now.toDateString();
