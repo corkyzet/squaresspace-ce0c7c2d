@@ -19,6 +19,7 @@ export type Game = {
   is_processed: boolean;
   espn_id: string | null;
   round: string | null;
+  start_time: string | null;
 };
 
 export function useSquares() {
