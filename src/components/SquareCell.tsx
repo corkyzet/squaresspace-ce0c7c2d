@@ -44,7 +44,7 @@ export function SquareCell({ winDigit, loseDigit, owner, winCount, isAdmin, onCe
       `}
     >
       {owner && (
-        <span className={`text-[9px] sm:text-[10px] leading-[1.2] text-center w-full overflow-hidden ${
+        <span className={`text-[7px] sm:text-[10px] leading-[1.2] text-center w-full overflow-hidden ${
           isHighlighted ? "text-accent font-semibold" : "text-foreground/80"
         }`}>
           {owner.split(' ').map((word, i) => (
@@ -55,7 +55,7 @@ export function SquareCell({ winDigit, loseDigit, owner, winCount, isAdmin, onCe
         </span>
       )}
       {isWinner && (
-        <span className={`text-[7px] sm:text-[8px] font-mono-display font-bold mt-auto shrink-0 ${
+        <span className={`text-[6px] sm:text-[8px] font-mono-display font-bold mt-auto shrink-0 ${
           isHighlighted ? "text-accent" : "text-primary"
         }`}>
           🏆{winCount}
