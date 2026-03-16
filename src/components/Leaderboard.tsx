@@ -8,9 +8,9 @@ interface LeaderboardProps {
 
 export function Leaderboard({ leaderboard, onSelectPlayer, highlightOwner }: LeaderboardProps) {
   return (
-    <div className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-foreground/10 bg-background/50 p-4">
-      <h2 className="font-mono-display text-sm uppercase tracking-widest text-primary mb-4 flex items-center gap-2">
-        <Trophy className="w-4 h-4" />
+    <div className="w-full lg:w-56 border-t lg:border-t-0 lg:border-l border-foreground/10 bg-background/50 p-3">
+      <h2 className="font-mono-display text-xs uppercase tracking-widest text-primary mb-3 flex items-center gap-2">
+        <Trophy className="w-3 h-3" />
         Leaderboard
       </h2>
       <div className="space-y-1">
@@ -22,19 +22,19 @@ export function Leaderboard({ leaderboard, onSelectPlayer, highlightOwner }: Lea
             key={entry.name}
             onClick={() => onSelectPlayer(highlightOwner === entry.name ? null : entry.name)}
             className={`
-              w-full flex items-center justify-between px-3 py-2 rounded-sm text-sm transition-all
+              w-full flex items-center justify-between px-2 py-1.5 rounded-sm text-xs transition-all
               ${highlightOwner === entry.name
                 ? "bg-accent/10 ring-1 ring-accent/40 gold-glow"
                 : "hover:bg-foreground/5"
               }
             `}
           >
-            <div className="flex items-center gap-3">
-              <span className="font-mono-display text-xs text-muted-foreground w-5">{i + 1}.</span>
-              <span className="text-foreground">{entry.name}</span>
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="font-mono-display text-[10px] text-muted-foreground w-4 shrink-0">{i + 1}.</span>
+              <span className="text-foreground truncate">{entry.name}</span>
             </div>
-            <span className="font-mono-display text-xs text-primary font-semibold">
-              {entry.wins} {entry.wins === 1 ? "win" : "wins"}
+            <span className="font-mono-display text-[10px] text-primary font-semibold shrink-0 ml-1">
+              {entry.wins}W
             </span>
           </button>
         ))}
