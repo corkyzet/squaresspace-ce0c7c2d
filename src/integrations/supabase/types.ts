@@ -17,10 +17,12 @@ export type Database = {
       games: {
         Row: {
           away_score: number
+          away_seed: number | null
           away_team: string
           created_at: string
           espn_id: string | null
           home_score: number
+          home_seed: number | null
           home_team: string
           id: string
           is_processed: boolean
@@ -31,10 +33,12 @@ export type Database = {
         }
         Insert: {
           away_score?: number
+          away_seed?: number | null
           away_team: string
           created_at?: string
           espn_id?: string | null
           home_score?: number
+          home_seed?: number | null
           home_team: string
           id?: string
           is_processed?: boolean
@@ -45,10 +49,12 @@ export type Database = {
         }
         Update: {
           away_score?: number
+          away_seed?: number | null
           away_team?: string
           created_at?: string
           espn_id?: string | null
           home_score?: number
+          home_seed?: number | null
           home_team?: string
           id?: string
           is_processed?: boolean
