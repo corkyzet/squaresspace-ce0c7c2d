@@ -30,10 +30,10 @@ export function Leaderboard({ leaderboard, onSelectPlayer, highlightOwners }: Le
         {leaderboard.map((entry, i) => (
           <button
             key={entry.name}
-            onClick={() => onSelectPlayer(highlightOwner === entry.name ? null : entry.name)}
+            onClick={() => onSelectPlayer(entry.name)}
             className={`
               w-full flex items-center justify-between px-2 py-1.5 rounded-sm text-xs transition-all
-              ${highlightOwner === entry.name
+              ${highlightOwners.includes(entry.name)
                 ? "bg-accent/10 ring-1 ring-accent/40 gold-glow"
                 : "hover:bg-foreground/5"
               }

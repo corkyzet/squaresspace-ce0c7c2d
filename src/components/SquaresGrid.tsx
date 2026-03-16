@@ -46,7 +46,7 @@ export function SquaresGrid({ findOwner, getWinCount, isAdmin, onCellClick, high
                   winCount={getWinCount(col, row)}
                   isAdmin={isAdmin}
                   onCellClick={onCellClick}
-                  highlightOwner={highlightOwner}
+                  highlightOwners={highlightOwners}
                 />
               ))}
             </React.Fragment>

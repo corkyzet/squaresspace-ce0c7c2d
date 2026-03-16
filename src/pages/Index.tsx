@@ -1,18 +1,24 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useSquares } from "@/hooks/useSquares";
 import { GameTicker } from "@/components/GameTicker";
 import { SquaresGrid } from "@/components/SquaresGrid";
 import { Bracket } from "@/components/Bracket";
 import { Leaderboard } from "@/components/Leaderboard";
 import { AdminModal } from "@/components/AdminModal";
+import { PlayerFilter } from "@/components/PlayerFilter";
 import { Shield, ShieldOff } from "lucide-react";
 import { toast } from "sonner";
 
 const Index = () => {
-  const { games, findOwner, getWinCount, leaderboard, updateSquare, fetchScores, squaresLoading } = useSquares();
+  const { games, squares, findOwner, getWinCount, leaderboard, updateSquare, fetchScores, squaresLoading } = useSquares();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [highlightOwner, setHighlightOwner] = useState<string | null>(null);
+  const [highlightOwners, setHighlightOwners] = useState<string[]>([]);
   const [editCell, setEditCell] = useState<{ w: number; l: number } | null>(null);
+
+  const allPlayers = useMemo(() => {
+    const names = new Set(squares.filter((s) => s.owner_name).map((s) => s.owner_name!));
+    return Array.from(names).sort((a, b) => a.localeCompare(b));
+  }, [squares]);
 
   const handleCellClick = (w: number, l: number) => {
     if (!isAdmin) return;
@@ -28,6 +34,16 @@ const Index = () => {
         onError: () => toast.error("Failed to save"),
       }
     );
+  };
+
+  const handleLeaderboardSelect = (name: string | null) => {
+    if (!name) {
+      setHighlightOwners([]);
+    } else {
+      setHighlightOwners((prev) =>
+        prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]
+      );
+    }
   };
 
   return (
@@ -57,6 +73,13 @@ const Index = () => {
         isRefreshing={fetchScores.isPending}
       />
 
+      {/* Player Filter */}
+      <PlayerFilter
+        players={allPlayers}
+        selected={highlightOwners}
+        onChange={setHighlightOwners}
+      />
+
       {/* Main content */}
       <div className="flex-1 flex flex-col lg:flex-row">
         <div className="flex-1 p-2 sm:p-4">
@@ -71,7 +94,7 @@ const Index = () => {
                 getWinCount={getWinCount}
                 isAdmin={isAdmin}
                 onCellClick={handleCellClick}
-                highlightOwner={highlightOwner}
+                highlightOwners={highlightOwners}
               />
               <div className="border-t border-foreground/10 mt-4">
                 <Bracket games={games} findOwner={findOwner} />
@@ -82,8 +105,8 @@ const Index = () => {
 
         <Leaderboard
           leaderboard={leaderboard}
-          onSelectPlayer={setHighlightOwner}
-          highlightOwner={highlightOwner}
+          onSelectPlayer={handleLeaderboardSelect}
+          highlightOwners={highlightOwners}
         />
       </div>
 
