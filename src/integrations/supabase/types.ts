@@ -19,10 +19,12 @@ export type Database = {
           away_score: number
           away_team: string
           created_at: string
+          espn_id: string | null
           home_score: number
           home_team: string
           id: string
           is_processed: boolean
+          round: string | null
           status: string
           updated_at: string
         }
@@ -30,10 +32,12 @@ export type Database = {
           away_score?: number
           away_team: string
           created_at?: string
+          espn_id?: string | null
           home_score?: number
           home_team: string
           id?: string
           is_processed?: boolean
+          round?: string | null
           status?: string
           updated_at?: string
         }
@@ -41,10 +45,12 @@ export type Database = {
           away_score?: number
           away_team?: string
           created_at?: string
+          espn_id?: string | null
           home_score?: number
           home_team?: string
           id?: string
           is_processed?: boolean
+          round?: string | null
           status?: string
           updated_at?: string
         }
