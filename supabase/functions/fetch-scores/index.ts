@@ -45,6 +45,8 @@ function parseEvent(event: any) {
   const awayTeam = away?.team?.shortDisplayName || away?.team?.displayName || "TBD";
   const homeScore = parseInt(home?.score || "0", 10);
   const awayScore = parseInt(away?.score || "0", 10);
+  const homeSeed = home?.curatedRank?.current ?? home?.seed ?? null;
+  const awaySeed = away?.curatedRank?.current ?? away?.seed ?? null;
 
   const statusType = competition?.status?.type?.name || event.status?.type?.name;
   let status = "Scheduled";
