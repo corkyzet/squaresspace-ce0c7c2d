@@ -1,1 +1,4 @@
 project_id = "siqhidpvtfbspdugjefm"
+
+[functions.fetch-scores]
+verify_jwt = false

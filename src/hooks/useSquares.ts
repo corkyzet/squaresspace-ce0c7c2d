@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 
 export type Square = {
   id: string;
@@ -17,6 +17,8 @@ export type Game = {
   away_score: number;
   status: string;
   is_processed: boolean;
+  espn_id: string | null;
+  round: string | null;
 };
 
 export function useSquares() {
@@ -40,6 +42,18 @@ export function useSquares() {
     },
   });
 
+  // Fetch live scores from ESPN via edge function
+  const fetchScores = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("fetch-scores");
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["games"] });
+    },
+  });
+
   // Realtime subscriptions
   useEffect(() => {
     const channel = supabase
@@ -54,6 +68,13 @@ export function useSquares() {
 
     return () => { supabase.removeChannel(channel); };
   }, [queryClient]);
+
+  // Auto-refresh scores every 60 seconds
+  useEffect(() => {
+    fetchScores.mutate();
+    const interval = setInterval(() => fetchScores.mutate(), 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const updateSquare = useMutation({
     mutationFn: async ({ win_digit, lose_digit, owner_name }: { win_digit: number; lose_digit: number; owner_name: string }) => {
@@ -102,6 +123,7 @@ export function useSquares() {
     squaresLoading: squaresQuery.isLoading,
     gamesLoading: gamesQuery.isLoading,
     updateSquare,
+    fetchScores,
     getWinCount,
     findOwner,
     leaderboard,
