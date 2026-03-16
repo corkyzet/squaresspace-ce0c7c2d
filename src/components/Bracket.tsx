@@ -149,7 +149,10 @@ export function Bracket({ games, findOwner }: BracketProps) {
   // Filter out First Four
   const tourneyGames = games.filter((g) => {
     const rc = classifyRound(g.round);
-    return rc !== null;
+    if (rc === null) return false;
+    // Hide games that haven't been set yet (still "Scheduled" with no real teams/scores)
+    if (g.status === "Scheduled" && g.home_score === 0 && g.away_score === 0) return false;
+    return true;
   });
 
   // Group by round
