@@ -91,39 +91,52 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Try today first, then look ahead up to 7 days for upcoming games
+    // Fetch full tournament date range (March 17 - April 7 roughly)
     const today = new Date();
-    let allEvents: any[] = [];
-
-    // Fetch today
+    const year = today.getFullYear();
+    const startDate = `${year}0317`;
+    const endDate = `${year}0408`;
+    
+    // ESPN allows date ranges with the dates param
+    const allEvents = await fetchGamesForDate(`${startDate}-${endDate}`);
+    
+    // Also fetch today + upcoming for the ticker
     const todayStr = formatDate(today);
-    allEvents = await fetchGamesForDate(todayStr);
-
-    // If no games today (excluding First Four), look ahead
-    const nonFirstFour = allEvents.filter((e: any) => {
+    const todayEvents = await fetchGamesForDate(todayStr);
+    
+    // Merge without duplicates
+    const seenIds = new Set(allEvents.map((e: any) => e.id));
+    for (const e of todayEvents) {
+      if (!seenIds.has(e.id)) {
+        allEvents.push(e);
+        seenIds.add(e.id);
+      }
+    }
+    
+    // If no non-First-Four games today, look ahead for ticker
+    const nonFirstFour = todayEvents.filter((e: any) => {
       const notes = e.competitions?.[0]?.notes?.[0]?.headline || "";
       const venue = e.competitions?.[0]?.venue?.fullName || "";
       return !notes.toLowerCase().includes("first four") && !venue.toLowerCase().includes("dayton");
     });
 
     if (nonFirstFour.length === 0) {
-      // Look ahead up to 7 days
       for (let i = 1; i <= 7; i++) {
         const futureDate = new Date(today);
         futureDate.setDate(today.getDate() + i);
-        const futureDateStr = formatDate(futureDate);
-        const futureEvents = await fetchGamesForDate(futureDateStr);
-        
+        const futureEvents = await fetchGamesForDate(formatDate(futureDate));
+        for (const e of futureEvents) {
+          if (!seenIds.has(e.id)) {
+            allEvents.push(e);
+            seenIds.add(e.id);
+          }
+        }
         const futurNonFF = futureEvents.filter((e: any) => {
           const notes = e.competitions?.[0]?.notes?.[0]?.headline || "";
           const venue = e.competitions?.[0]?.venue?.fullName || "";
           return !notes.toLowerCase().includes("first four") && !venue.toLowerCase().includes("dayton");
         });
-
-        if (futurNonFF.length > 0) {
-          allEvents = [...allEvents, ...futureEvents];
-          break;
-        }
+        if (futurNonFF.length > 0) break;
       }
     }
 
