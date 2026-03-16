@@ -25,6 +25,7 @@ export type Database = {
           id: string
           is_processed: boolean
           round: string | null
+          start_time: string | null
           status: string
           updated_at: string
         }
@@ -38,6 +39,7 @@ export type Database = {
           id?: string
           is_processed?: boolean
           round?: string | null
+          start_time?: string | null
           status?: string
           updated_at?: string
         }
@@ -51,6 +53,7 @@ export type Database = {
           id?: string
           is_processed?: boolean
           round?: string | null
+          start_time?: string | null
           status?: string
           updated_at?: string
         }
