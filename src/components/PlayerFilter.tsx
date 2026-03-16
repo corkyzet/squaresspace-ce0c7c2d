@@ -54,7 +54,7 @@ export function PlayerFilter({ players, selected, onChange }: PlayerFilterProps)
           value={search}
           onChange={(e) => { setSearch(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
-          placeholder={selected.length === 0 ? "Filter by player..." : `${selected.length} selected — type to filter`}
+          placeholder={selected.length === 0 ? "Filter by contestant..." : `${selected.length} selected — type to filter`}
           className="bg-transparent outline-none text-foreground/80 placeholder:text-muted-foreground flex-1 min-w-0 uppercase tracking-wider"
         />
         <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform shrink-0 ${open ? "rotate-180" : ""}`} />
