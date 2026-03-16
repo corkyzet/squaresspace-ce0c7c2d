@@ -3,10 +3,10 @@ import { Trophy } from "lucide-react";
 interface LeaderboardProps {
   leaderboard: { name: string; wins: number; money: number }[];
   onSelectPlayer: (name: string | null) => void;
-  highlightOwner: string | null;
+  highlightOwners: string[];
 }
 
-export function Leaderboard({ leaderboard, onSelectPlayer, highlightOwner }: LeaderboardProps) {
+export function Leaderboard({ leaderboard, onSelectPlayer, highlightOwners }: LeaderboardProps) {
   return (
     <div className="w-full lg:w-56 border-t lg:border-t-0 lg:border-l border-foreground/10 bg-background/50 p-3">
       <h2 className="font-mono-display text-xs uppercase tracking-widest text-primary mb-3 flex items-center gap-2">
