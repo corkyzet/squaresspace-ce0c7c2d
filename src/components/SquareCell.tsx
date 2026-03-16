@@ -44,7 +44,7 @@ export function SquareCell({ winDigit, loseDigit, owner, winCount, isAdmin, onCe
       `}
     >
       {owner && (
-        <span className={`text-[7px] sm:text-[10px] leading-[1.2] text-center w-full overflow-hidden flex flex-wrap justify-center gap-x-[3px] ${
+        <span className={`text-[5px] sm:text-[10px] leading-[1.1] text-center w-full overflow-hidden flex flex-wrap justify-center gap-x-[2px] sm:gap-x-[3px] ${
           isHighlighted ? "text-accent font-semibold" : "text-foreground/80"
         }`}>
           {owner.split(' ').map((word, i) => (
