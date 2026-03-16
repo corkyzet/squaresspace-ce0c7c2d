@@ -89,8 +89,9 @@ export function useSquares() {
   });
 
   // Compute winning squares from final games
+  // Exclude First Four games from win calculations
   const winningDigits = games
-    .filter((g) => g.status === "Final")
+    .filter((g) => g.status === "Final" && g.round?.toLowerCase() !== "first four")
     .map((g) => ({
       w: Math.max(g.home_score, g.away_score) % 10,
       l: Math.min(g.home_score, g.away_score) % 10,
