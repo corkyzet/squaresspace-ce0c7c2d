@@ -48,7 +48,6 @@ Deno.serve(async (req) => {
       const competition = event.competitions?.[0];
       const competitors = competition?.competitors || [];
       
-      // ESPN: competitors[0] is usually home, competitors[1] is away
       const home = competitors.find((c: any) => c.homeAway === "home") || competitors[0];
       const away = competitors.find((c: any) => c.homeAway === "away") || competitors[1];
 
@@ -63,7 +62,17 @@ Deno.serve(async (req) => {
       else if (statusType === "STATUS_IN_PROGRESS" || statusType === "STATUS_HALFTIME") status = "Live";
       else if (statusType === "STATUS_END_PERIOD") status = "Live";
 
-      const round = event.season?.slug || competition?.notes?.[0]?.headline || "";
+      // Extract round from notes or type description
+      const notesHeadline = competition?.notes?.[0]?.headline || "";
+      const typeDetail = competition?.type?.abbreviation || "";
+      let round = notesHeadline || typeDetail || "";
+      
+      // Detect First Four: ESPN labels them in notes or they're played in Dayton
+      const venue = competition?.venue?.fullName || "";
+      const isFirstFour = round.toLowerCase().includes("first four") || 
+                          notesHeadline.toLowerCase().includes("first four") ||
+                          (venue.toLowerCase().includes("dayton") && !round);
+      if (isFirstFour) round = "First Four";
 
       return {
         espn_id: event.id,

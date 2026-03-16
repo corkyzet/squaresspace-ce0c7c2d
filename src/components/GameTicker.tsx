@@ -8,9 +8,11 @@ interface GameTickerProps {
 }
 
 export function GameTicker({ games, onRefresh, isRefreshing }: GameTickerProps) {
-  const liveGames = games.filter((g) => g.status === "Live");
-  const finalGames = games.filter((g) => g.status === "Final");
-  const scheduledGames = games.filter((g) => g.status === "Scheduled");
+  // Filter out First Four games
+  const mainGames = games.filter((g) => g.round?.toLowerCase() !== "first four");
+  const liveGames = mainGames.filter((g) => g.status === "Live");
+  const finalGames = mainGames.filter((g) => g.status === "Final");
+  const scheduledGames = mainGames.filter((g) => g.status === "Scheduled");
   const sortedGames = [...liveGames, ...finalGames, ...scheduledGames];
 
   return (
