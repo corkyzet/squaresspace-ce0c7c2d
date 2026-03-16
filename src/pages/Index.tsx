@@ -8,7 +8,7 @@ import { Shield, ShieldOff } from "lucide-react";
 import { toast } from "sonner";
 
 const Index = () => {
-  const { games, findOwner, getWinCount, leaderboard, updateSquare, squaresLoading } = useSquares();
+  const { games, findOwner, getWinCount, leaderboard, updateSquare, fetchScores, squaresLoading } = useSquares();
   const [isAdmin, setIsAdmin] = useState(false);
   const [highlightOwner, setHighlightOwner] = useState<string | null>(null);
   const [editCell, setEditCell] = useState<{ w: number; l: number } | null>(null);
@@ -50,7 +50,11 @@ const Index = () => {
       </header>
 
       {/* Ticker */}
-      <GameTicker games={games} />
+      <GameTicker
+        games={games}
+        onRefresh={() => fetchScores.mutate()}
+        isRefreshing={fetchScores.isPending}
+      />
 
       {/* Main content */}
       <div className="flex-1 flex flex-col lg:flex-row">
@@ -70,7 +74,6 @@ const Index = () => {
           )}
         </div>
 
-        {/* Leaderboard */}
         <Leaderboard
           leaderboard={leaderboard}
           onSelectPlayer={setHighlightOwner}
@@ -78,7 +81,6 @@ const Index = () => {
         />
       </div>
 
-      {/* Admin modal */}
       {editCell && (
         <AdminModal
           open={!!editCell}
