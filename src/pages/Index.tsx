@@ -65,13 +65,18 @@ const Index = () => {
               <span className="font-mono-display text-sm text-muted-foreground animate-pulse">Loading grid...</span>
             </div>
           ) : (
-            <SquaresGrid
-              findOwner={findOwner}
-              getWinCount={getWinCount}
-              isAdmin={isAdmin}
-              onCellClick={handleCellClick}
-              highlightOwner={highlightOwner}
-            />
+            <>
+              <SquaresGrid
+                findOwner={findOwner}
+                getWinCount={getWinCount}
+                isAdmin={isAdmin}
+                onCellClick={handleCellClick}
+                highlightOwner={highlightOwner}
+              />
+              <div className="border-t border-foreground/10 mt-4">
+                <Bracket games={games} findOwner={findOwner} />
+              </div>
+            </>
           )}
         </div>
 
@@ -80,11 +85,6 @@ const Index = () => {
           onSelectPlayer={setHighlightOwner}
           highlightOwner={highlightOwner}
         />
-      </div>
-
-      {/* Bracket */}
-      <div className="border-t border-foreground/10">
-        <Bracket games={games} findOwner={findOwner} />
       </div>
 
       {editCell && (
