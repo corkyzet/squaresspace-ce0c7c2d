@@ -29,9 +29,9 @@ export function Leaderboard({ leaderboard, onSelectPlayer, highlightOwner }: Lea
               }
             `}
           >
-            <div className="flex items-center gap-3">
-              <span className="font-mono-display text-xs text-muted-foreground w-5">{i + 1}.</span>
-              <span className="text-foreground">{entry.name}</span>
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="font-mono-display text-[10px] text-muted-foreground w-4 shrink-0">{i + 1}.</span>
+              <span className="text-foreground truncate">{entry.name}</span>
             </div>
             <span className="font-mono-display text-xs text-primary font-semibold">
               {entry.wins} {entry.wins === 1 ? "win" : "wins"}
