@@ -1,0 +1,1 @@
+UPDATE squares SET owner_name = 'dave headlee' WHERE win_digit = 9 AND lose_digit = 4;
