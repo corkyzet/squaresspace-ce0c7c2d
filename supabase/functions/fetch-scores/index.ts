@@ -121,15 +121,52 @@ Deno.serve(async (req) => {
 
     const games = allEvents.map(parseEvent);
 
-    // Upsert games into database
+    // Upsert only changed games to reduce DB load and response latency.
     if (games.length > 0) {
-      const { error: upsertError } = await supabase
-        .from("games")
-        .upsert(games, { onConflict: "espn_id" });
+      const espnIds = games.map((g) => g.espn_id).filter(Boolean) as string[];
+      let gamesToUpsert = games;
 
-      if (upsertError) {
-        console.error("Upsert error:", upsertError);
-        throw new Error(`Database upsert failed: ${upsertError.message}`);
+      if (espnIds.length > 0) {
+        const { data: existingGames, error: existingError } = await supabase
+          .from("games")
+          .select("espn_id, home_team, away_team, home_score, away_score, home_seed, away_seed, status, round, start_time")
+          .in("espn_id", espnIds);
+
+        if (existingError) {
+          throw new Error(`Existing games fetch failed: ${existingError.message}`);
+        }
+
+        const existingById = new Map((existingGames ?? []).map((g: any) => [g.espn_id, g]));
+
+        gamesToUpsert = games.filter((game) => {
+          const existing = existingById.get(game.espn_id);
+          if (!existing) return true;
+
+          return (
+            existing.home_team !== game.home_team ||
+            existing.away_team !== game.away_team ||
+            existing.home_score !== game.home_score ||
+            existing.away_score !== game.away_score ||
+            existing.home_seed !== game.home_seed ||
+            existing.away_seed !== game.away_seed ||
+            existing.status !== game.status ||
+            existing.round !== game.round ||
+            existing.start_time !== game.start_time
+          );
+        });
+      }
+
+      console.log(`Skipping ${games.length - gamesToUpsert.length} unchanged games, upserting ${gamesToUpsert.length}`);
+
+      if (gamesToUpsert.length > 0) {
+        const { error: upsertError } = await supabase
+          .from("games")
+          .upsert(gamesToUpsert, { onConflict: "espn_id" });
+
+        if (upsertError) {
+          console.error("Upsert error:", upsertError);
+          throw new Error(`Database upsert failed: ${upsertError.message}`);
+        }
       }
     }
 
