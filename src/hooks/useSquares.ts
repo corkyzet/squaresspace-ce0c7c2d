@@ -34,6 +34,7 @@ export function useSquares() {
       if (error) throw error;
       return data as Square[];
     },
+    staleTime: 30000,
   });
 
   const { data: games = [], ...gamesQuery } = useQuery({
@@ -43,6 +44,7 @@ export function useSquares() {
       if (error) throw error;
       return data as Game[];
     },
+    staleTime: 15000,
   });
 
   // Fetch live scores from ESPN via edge function
@@ -74,7 +76,7 @@ export function useSquares() {
 
   // Auto-refresh scores — delay initial fetch so UI renders first
   useEffect(() => {
-    const initialTimeout = setTimeout(() => fetchScores.mutate(), 1500);
+    const initialTimeout = setTimeout(() => fetchScores.mutate(), 3000);
     const interval = setInterval(() => fetchScores.mutate(), 60000);
     return () => { clearTimeout(initialTimeout); clearInterval(interval); };
   }, []);
