@@ -81,7 +81,7 @@ const Index = () => {
       />
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col lg:flex-row">
+      <div className="flex-1 flex flex-col md:flex-row">
         <div className="flex-1 p-2 sm:p-4">
           {squaresLoading ? (
             <div className="flex items-center justify-center h-64">
