@@ -105,6 +105,7 @@ Deno.serve(async (req) => {
 
     // Try to upsert to DB with a timeout, but don't fail if DB is unavailable
     let dbGames = null;
+    let dbSquares = null;
     const dbTimeout = <T>(promise: Promise<T>, ms = 5000): Promise<T | null> =>
       Promise.race([promise, new Promise<null>((resolve) => setTimeout(() => resolve(null), ms))]);
 
