@@ -1,28 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect, useRef } from "react";
-
-const SQUARES_CACHE_KEY = "squares-cache-v1";
-const GAMES_CACHE_KEY = "games-cache-v1";
-
-function readCachedData<T>(key: string): T | undefined {
-  if (typeof window === "undefined") return undefined;
-  try {
-    const value = window.localStorage.getItem(key);
-    return value ? (JSON.parse(value) as T) : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function writeCachedData<T>(key: string, data: T): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(key, JSON.stringify(data));
-  } catch {
-    // Ignore cache write failures (private mode / storage limits)
-  }
-}
+import { useEffect } from "react";
 
 export type Square = {
   id: string;
@@ -48,7 +26,6 @@ export type Game = {
 
 export function useSquares() {
   const queryClient = useQueryClient();
-  const isSyncingScores = useRef(false);
 
   const { data: squares = [], ...squaresQuery } = useQuery({
     queryKey: ["squares"],
@@ -59,7 +36,6 @@ export function useSquares() {
       if (error) throw error;
       return data as Square[];
     },
-    initialData: () => readCachedData<Square[]>(SQUARES_CACHE_KEY),
     staleTime: 60000,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
@@ -74,41 +50,12 @@ export function useSquares() {
       if (error) throw error;
       return data as Game[];
     },
-    initialData: () => readCachedData<Game[]>(GAMES_CACHE_KEY),
     staleTime: 180000,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
 
-  useEffect(() => {
-    if (squares.length > 0) writeCachedData(SQUARES_CACHE_KEY, squares);
-  }, [squares]);
-
-  useEffect(() => {
-    if (games.length > 0) writeCachedData(GAMES_CACHE_KEY, games);
-  }, [games]);
-
-  // Fetch live scores from ESPN via edge function
-  const fetchScores = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke("fetch-scores");
-      if (error) throw error;
-      return data;
-    },
-    onMutate: () => {
-      isSyncingScores.current = true;
-    },
-    onSuccess: (data) => {
-      if (Array.isArray(data?.games)) {
-        queryClient.setQueryData(["games"], data.games as Game[]);
-      }
-    },
-    onSettled: () => {
-      isSyncingScores.current = false;
-    },
-  });
-
-  // Realtime subscription (squares only). Games are refreshed by fetchScores to avoid request storms.
+  // Realtime subscription (squares only)
   useEffect(() => {
     const channel = supabase
       .channel("realtime-squares")
@@ -121,38 +68,6 @@ export function useSquares() {
       supabase.removeChannel(channel);
     };
   }, [queryClient]);
-
-  // Start score sync only after initial data is rendered
-  const isInitialDataReady = !squaresQuery.isLoading && !gamesQuery.isLoading;
-
-  useEffect(() => {
-    if (!isInitialDataReady) return;
-
-    const connection =
-      typeof navigator !== "undefined"
-        ? (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection
-        : undefined;
-
-    const isConstrainedConnection = Boolean(
-      connection?.saveData ||
-        connection?.effectiveType?.includes("2g") ||
-        connection?.effectiveType?.includes("3g")
-    );
-
-    const runScoreSync = () => {
-      if (isSyncingScores.current) return;
-      fetchScores.mutate();
-    };
-
-    const initialDelayMs = isConstrainedConnection ? 20000 : 10000;
-    const initialTimeout = setTimeout(runScoreSync, initialDelayMs);
-    const interval = setInterval(runScoreSync, 180000);
-
-    return () => {
-      clearTimeout(initialTimeout);
-      clearInterval(interval);
-    };
-  }, [isInitialDataReady, fetchScores.mutate]);
 
   const updateSquare = useMutation({
     mutationFn: async ({ win_digit, lose_digit, owner_name }: { win_digit: number; lose_digit: number; owner_name: string }) => {
@@ -170,13 +85,11 @@ export function useSquares() {
   const getRoundPrize = (round: string | null): number => {
     if (!round) return 50;
     const r = round.toLowerCase();
-    // Check most specific first — "championship" alone could match the tournament name
     if (r.includes("national championship") || (r.includes("championship") && !r.includes("region") && !r.includes("round"))) return 1500;
     if (r.includes("final four") || r.includes("semifinal")) return 800;
     if (r.includes("elite eight") || r.includes("elite 8") || r.includes("regional final")) return 400;
     if (r.includes("sweet 16") || r.includes("sweet sixteen") || r.includes("regional semifinal")) return 200;
     if (r.includes("2nd round") || r.includes("second round") || r.includes("3rd round") || r.includes("round of 32")) return 100;
-    // Default: 1st round
     return 50;
   };
 
@@ -221,7 +134,6 @@ export function useSquares() {
     squaresLoading: squaresQuery.isLoading,
     gamesLoading: gamesQuery.isLoading,
     updateSquare,
-    fetchScores,
     getWinCount,
     findOwner,
     leaderboard,
