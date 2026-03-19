@@ -79,7 +79,7 @@ export function useSquares() {
   // Auto-refresh scores every 60 seconds
   useEffect(() => {
     fetchScores.mutate();
-    const interval = setInterval(() => fetchScores.mutate(), 60000);
+    const interval = setInterval(() => fetchScores.mutate(), 120000);
     return () => clearInterval(interval);
   }, []);
 
