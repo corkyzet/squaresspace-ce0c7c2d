@@ -91,81 +91,50 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch full tournament date range (March 17 - April 7 roughly)
+    // Single API call with full tournament date range
     const today = new Date();
     const year = today.getFullYear();
     const startDate = `${year}0317`;
     const endDate = `${year}0408`;
     
-    // ESPN allows date ranges with the dates param
     const allEvents = await fetchGamesForDate(`${startDate}-${endDate}`);
     
-    // Also fetch today + upcoming for the ticker
-    const todayStr = formatDate(today);
-    const todayEvents = await fetchGamesForDate(todayStr);
-    
-    // Merge without duplicates
-    const seenIds = new Set(allEvents.map((e: any) => e.id));
-    for (const e of todayEvents) {
-      if (!seenIds.has(e.id)) {
-        allEvents.push(e);
-        seenIds.add(e.id);
-      }
-    }
-    
-    // If no non-First-Four games today, look ahead for ticker
-    const nonFirstFour = todayEvents.filter((e: any) => {
-      const notes = e.competitions?.[0]?.notes?.[0]?.headline || "";
-      const venue = e.competitions?.[0]?.venue?.fullName || "";
-      return !notes.toLowerCase().includes("first four") && !venue.toLowerCase().includes("dayton");
-    });
-
-    if (nonFirstFour.length === 0) {
-      for (let i = 1; i <= 7; i++) {
-        const futureDate = new Date(today);
-        futureDate.setDate(today.getDate() + i);
-        const futureEvents = await fetchGamesForDate(formatDate(futureDate));
-        for (const e of futureEvents) {
-          if (!seenIds.has(e.id)) {
-            allEvents.push(e);
-            seenIds.add(e.id);
-          }
-        }
-        const futurNonFF = futureEvents.filter((e: any) => {
-          const notes = e.competitions?.[0]?.notes?.[0]?.headline || "";
-          const venue = e.competitions?.[0]?.venue?.fullName || "";
-          return !notes.toLowerCase().includes("first four") && !venue.toLowerCase().includes("dayton");
-        });
-        if (futurNonFF.length > 0) break;
-      }
-    }
-
     console.log(`Found ${allEvents.length} total events`);
 
     const games = allEvents.map(parseEvent);
 
-    // Upsert games into database
-    if (games.length > 0) {
-      const { error: upsertError } = await supabase
-        .from("games")
-        .upsert(games, { onConflict: "espn_id" });
+    // Try to upsert to DB with a timeout, but don't fail if DB is unavailable
+    let dbGames = null;
+    const dbTimeout = <T>(promise: Promise<T>, ms = 5000): Promise<T | null> =>
+      Promise.race([promise, new Promise<null>((resolve) => setTimeout(() => resolve(null), ms))]);
 
-      if (upsertError) {
-        console.error("Upsert error:", upsertError);
-        throw new Error(`Database upsert failed: ${upsertError.message}`);
+    try {
+      if (games.length > 0) {
+        const upsertResult = await dbTimeout(
+          supabase.from("games").upsert(games, { onConflict: "espn_id" })
+        );
+        if (upsertResult && (upsertResult as any).error) {
+          console.error("Upsert error (non-fatal):", (upsertResult as any).error);
+        }
       }
+
+      const selectResult = await dbTimeout(
+        supabase.from("games").select("*").order("start_time", { ascending: true, nullsFirst: false })
+      );
+      if (selectResult && !(selectResult as any).error) {
+        dbGames = (selectResult as any).data;
+      }
+    } catch (dbErr) {
+      console.error("DB connection error (non-fatal):", dbErr);
     }
 
-    // Return all games from DB
-    const { data: allGames, error: fetchError } = await supabase
-      .from("games")
-      .select("*")
-      .order("start_time", { ascending: true, nullsFirst: false });
-
-    if (fetchError) throw new Error(`Fetch error: ${fetchError.message}`);
+    // Return DB games if available, otherwise return ESPN data directly
+    const returnGames = dbGames || games.sort((a: any, b: any) => 
+      (a.start_time || "").localeCompare(b.start_time || "")
+    );
 
     return new Response(
-      JSON.stringify({ success: true, count: games.length, games: allGames }),
+      JSON.stringify({ success: true, count: returnGames.length, games: returnGames }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

@@ -43,6 +43,8 @@ export function useSquares() {
       if (error) throw error;
       return data as Game[];
     },
+    retry: 2,
+    retryDelay: 3000,
   });
 
   // Fetch live scores from ESPN via edge function
@@ -50,6 +52,10 @@ export function useSquares() {
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke("fetch-scores");
       if (error) throw error;
+      // If the edge function returned games directly (DB fallback), update cache
+      if (data?.games) {
+        queryClient.setQueryData(["games"], data.games);
+      }
       return data;
     },
     onSuccess: () => {
@@ -75,7 +81,7 @@ export function useSquares() {
   // Auto-refresh scores every 60 seconds
   useEffect(() => {
     fetchScores.mutate();
-    const interval = setInterval(() => fetchScores.mutate(), 60000);
+    const interval = setInterval(() => fetchScores.mutate(), 120000);
     return () => clearInterval(interval);
   }, []);
 
