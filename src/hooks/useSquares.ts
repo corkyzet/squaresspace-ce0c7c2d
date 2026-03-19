@@ -76,7 +76,7 @@ export function useSquares() {
 
   // Auto-refresh scores — delay initial fetch so UI renders first
   useEffect(() => {
-    const initialTimeout = setTimeout(() => fetchScores.mutate(), 1500);
+    const initialTimeout = setTimeout(() => fetchScores.mutate(), 3000);
     const interval = setInterval(() => fetchScores.mutate(), 60000);
     return () => { clearTimeout(initialTimeout); clearInterval(interval); };
   }, []);
