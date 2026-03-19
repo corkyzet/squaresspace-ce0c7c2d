@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react";
 import { useSquares } from "@/hooks/useSquares";
+import { GameTicker } from "@/components/GameTicker";
 import { SquaresGrid } from "@/components/SquaresGrid";
 import { Bracket } from "@/components/Bracket";
 import { Leaderboard } from "@/components/Leaderboard";
 import { AdminModal } from "@/components/AdminModal";
 import { PlayerFilter } from "@/components/PlayerFilter";
-import { Shield, LogOut, Lock } from "lucide-react";
+import { Shield, ShieldOff, Lock, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ import { Button } from "@/components/ui/button";
 const ADMIN_PASSWORD = "FinSo";
 
 const Index = () => {
-  const { games, squares, findOwner, getWinCount, leaderboard, updateSquare, squaresLoading } = useSquares();
+  const { games, squares, findOwner, getWinCount, leaderboard, updateSquare, fetchScores, squaresLoading } = useSquares();
   const [isAdmin, setIsAdmin] = useState(false);
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
@@ -145,6 +146,12 @@ const Index = () => {
           </button>
         </header>
 
+        <GameTicker
+          games={games}
+          onRefresh={() => fetchScores.mutate()}
+          isRefreshing={fetchScores.isPending}
+        />
+
         <div className="flex-1 flex flex-col lg:flex-row">
           <div className="flex-1 p-2 sm:p-4">
             <p className="text-xs text-muted-foreground mb-3 font-mono-display">
@@ -201,6 +208,12 @@ const Index = () => {
           Admin
         </button>
       </header>
+
+      <GameTicker
+        games={games}
+        onRefresh={() => fetchScores.mutate()}
+        isRefreshing={fetchScores.isPending}
+      />
 
       <PlayerFilter
         players={allPlayers}
