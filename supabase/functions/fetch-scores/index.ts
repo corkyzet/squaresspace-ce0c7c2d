@@ -105,6 +105,7 @@ Deno.serve(async (req) => {
 
     // Try to upsert to DB with a timeout, but don't fail if DB is unavailable
     let dbGames = null;
+    let dbSquares = null;
     const dbTimeout = <T>(promise: Promise<T>, ms = 5000): Promise<T | null> =>
       Promise.race([promise, new Promise<null>((resolve) => setTimeout(() => resolve(null), ms))]);
 
@@ -124,6 +125,14 @@ Deno.serve(async (req) => {
       if (selectResult && !(selectResult as any).error) {
         dbGames = (selectResult as any).data;
       }
+
+      // Also try to fetch squares
+      const squaresResult = await dbTimeout(
+        supabase.from("squares").select("*")
+      );
+      if (squaresResult && !(squaresResult as any).error) {
+        dbSquares = (squaresResult as any).data;
+      }
     } catch (dbErr) {
       console.error("DB connection error (non-fatal):", dbErr);
     }
@@ -134,7 +143,7 @@ Deno.serve(async (req) => {
     );
 
     return new Response(
-      JSON.stringify({ success: true, count: returnGames.length, games: returnGames }),
+      JSON.stringify({ success: true, count: returnGames.length, games: returnGames, squares: dbSquares }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

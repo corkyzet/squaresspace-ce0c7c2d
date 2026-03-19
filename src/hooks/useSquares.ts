@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect, useCallback } from "react";
+import { useEffect } from "react";
 
 export type Square = {
   id: string;
@@ -10,13 +10,13 @@ export type Square = {
 };
 
 export type Game = {
-  id: string;
+  id?: string;
   home_team: string;
   away_team: string;
   home_score: number;
   away_score: number;
   status: string;
-  is_processed: boolean;
+  is_processed?: boolean;
   espn_id: string | null;
   round: string | null;
   start_time: string | null;
@@ -68,6 +68,10 @@ export function useSquares() {
       if (data?.games) {
         queryClient.setQueryData(["games"], data.games);
       }
+      // Update squares cache if DB returned them
+      if (data?.squares) {
+        queryClient.setQueryData(["squares"], data.squares);
+      }
       return data;
     },
   });
@@ -87,7 +91,7 @@ export function useSquares() {
     return () => { supabase.removeChannel(channel); };
   }, [queryClient]);
 
-  // Auto-refresh scores every 60 seconds
+  // Auto-refresh scores every 120 seconds
   useEffect(() => {
     fetchScores.mutate();
     const interval = setInterval(() => fetchScores.mutate(), 120000);
@@ -110,13 +114,11 @@ export function useSquares() {
   const getRoundPrize = (round: string | null): number => {
     if (!round) return 50;
     const r = round.toLowerCase();
-    // Check most specific first — "championship" alone could match the tournament name
     if (r.includes("national championship") || (r.includes("championship") && !r.includes("region") && !r.includes("round"))) return 1500;
     if (r.includes("final four") || r.includes("semifinal")) return 800;
     if (r.includes("elite eight") || r.includes("elite 8") || r.includes("regional final")) return 400;
     if (r.includes("sweet 16") || r.includes("sweet sixteen") || r.includes("regional semifinal")) return 200;
     if (r.includes("2nd round") || r.includes("second round") || r.includes("3rd round") || r.includes("round of 32")) return 100;
-    // Default: 1st round
     return 50;
   };
 
