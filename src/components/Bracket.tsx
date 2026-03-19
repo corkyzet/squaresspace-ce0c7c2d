@@ -207,7 +207,7 @@ export function Bracket({ games, findOwner }: BracketProps) {
                   return (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                       {unknownGames.map((game) => (
-                        <BracketGame key={game.id} game={game} findOwner={findOwner} />
+                        <BracketGame key={game.id || game.espn_id || `${game.home_team}-${game.away_team}`} game={game} findOwner={findOwner} />
                       ))}
                     </div>
                   );
