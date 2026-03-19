@@ -95,7 +95,8 @@ export function useSquares() {
   const getRoundPrize = (round: string | null): number => {
     if (!round) return 50;
     const r = round.toLowerCase();
-    if (r.includes("championship") || r.includes("national")) return 1500;
+    // Check most specific first — "championship" alone could match the tournament name
+    if (r.includes("national championship") || (r.includes("championship") && !r.includes("region") && !r.includes("round"))) return 1500;
     if (r.includes("final four") || r.includes("semifinal")) return 800;
     if (r.includes("elite eight") || r.includes("elite 8") || r.includes("regional final")) return 400;
     if (r.includes("sweet 16") || r.includes("sweet sixteen") || r.includes("regional semifinal")) return 200;
