@@ -89,54 +89,30 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      db: { schema: "public" },
+      global: { headers: { "x-connection-timeout": "30000" } },
+    });
 
-    // Fetch full tournament date range (March 17 - April 7 roughly)
+    // Only fetch the date range — this already includes today's games
     const today = new Date();
     const year = today.getFullYear();
     const startDate = `${year}0317`;
     const endDate = `${year}0408`;
     
-    // ESPN allows date ranges with the dates param
     const allEvents = await fetchGamesForDate(`${startDate}-${endDate}`);
     
-    // Also fetch today + upcoming for the ticker
+    // If the range returned nothing for today/upcoming, fetch today specifically
     const todayStr = formatDate(today);
-    const todayEvents = await fetchGamesForDate(todayStr);
+    const hasTodayGames = allEvents.some((e: any) => (e.date || "").startsWith(today.toISOString().slice(0, 10)));
     
-    // Merge without duplicates
-    const seenIds = new Set(allEvents.map((e: any) => e.id));
-    for (const e of todayEvents) {
-      if (!seenIds.has(e.id)) {
-        allEvents.push(e);
-        seenIds.add(e.id);
-      }
-    }
-    
-    // If no non-First-Four games today, look ahead for ticker
-    const nonFirstFour = todayEvents.filter((e: any) => {
-      const notes = e.competitions?.[0]?.notes?.[0]?.headline || "";
-      const venue = e.competitions?.[0]?.venue?.fullName || "";
-      return !notes.toLowerCase().includes("first four") && !venue.toLowerCase().includes("dayton");
-    });
-
-    if (nonFirstFour.length === 0) {
-      for (let i = 1; i <= 7; i++) {
-        const futureDate = new Date(today);
-        futureDate.setDate(today.getDate() + i);
-        const futureEvents = await fetchGamesForDate(formatDate(futureDate));
-        for (const e of futureEvents) {
-          if (!seenIds.has(e.id)) {
-            allEvents.push(e);
-            seenIds.add(e.id);
-          }
+    if (!hasTodayGames) {
+      const todayEvents = await fetchGamesForDate(todayStr);
+      const seenIds = new Set(allEvents.map((e: any) => e.id));
+      for (const e of todayEvents) {
+        if (!seenIds.has(e.id)) {
+          allEvents.push(e);
         }
-        const futurNonFF = futureEvents.filter((e: any) => {
-          const notes = e.competitions?.[0]?.notes?.[0]?.headline || "";
-          const venue = e.competitions?.[0]?.venue?.fullName || "";
-          return !notes.toLowerCase().includes("first four") && !venue.toLowerCase().includes("dayton");
-        });
-        if (futurNonFF.length > 0) break;
       }
     }
 
@@ -144,18 +120,21 @@ Deno.serve(async (req) => {
 
     const games = allEvents.map(parseEvent);
 
-    // Upsert games in batches of 10 to avoid statement timeout
-    const BATCH_SIZE = 10;
-    for (let i = 0; i < games.length; i += BATCH_SIZE) {
-      const batch = games.slice(i, i + BATCH_SIZE);
+    // Upsert games one-by-one to avoid statement timeout
+    let upsertErrors = 0;
+    for (const game of games) {
       const { error: upsertError } = await supabase
         .from("games")
-        .upsert(batch, { onConflict: "espn_id" });
+        .upsert([game], { onConflict: "espn_id" });
 
       if (upsertError) {
-        console.error(`Upsert error (batch ${i / BATCH_SIZE + 1}):`, upsertError);
-        throw new Error(`Database upsert failed: ${upsertError.message}`);
+        console.error(`Upsert error for ${game.espn_id}:`, upsertError.message);
+        upsertErrors++;
       }
+    }
+    
+    if (upsertErrors > 0) {
+      console.warn(`${upsertErrors} upsert errors out of ${games.length} games`);
     }
 
     // Return all games from DB
