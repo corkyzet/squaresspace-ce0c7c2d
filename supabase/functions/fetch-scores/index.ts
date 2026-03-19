@@ -9,6 +9,36 @@ const corsHeaders = {
 const ESPN_SCOREBOARD_URL =
   "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard";
 
+// Hardcoded squares fallback (from the official grid image)
+// Format: SQUARES_DATA[win_digit][lose_digit] = owner_name
+const SQUARES_DATA: Record<number, Record<number, string>> = {
+  5: { 4: "Elias Papalios", 3: "Brendan Smith", 0: "Brendan Shea", 6: "Kevin Murphy", 2: "Stephen Medow", 9: "Carl Forster", 7: "Peter Liebeskind", 1: "Joe Liebeskind", 8: "Dara & Jason Liebeskind", 5: "Colin Mansfield" },
+  8: { 4: "Frank Scappaticci", 3: "Gary Levine", 0: "David Zion", 6: "Alex Cohen-Smith", 2: "Michael Distenfeld", 9: "Alyx Steinberg", 7: "Colin Mansfield", 1: "Brendan Shea", 8: "Jeffrey Kaplan", 5: "Josh Klosk" },
+  6: { 4: "Jeff Lichtstein", 3: "Shaun Gluss", 0: "Jon Gottlieb", 6: "Colin Mansfield", 2: "Mike Brodsky", 9: "Mindy Kennedy", 7: "Mike Tully", 1: "Adam Fixelle", 8: "Hunter Tomko", 5: "Cory Dalin" },
+  1: { 4: "Andrew Feldman", 3: "Marty Zettler", 0: "Michael Baldauff", 6: "Jamie Kennedy", 2: "Jenn Fuller", 9: "Brandon Resnick", 7: "Andrew Oppenheimer", 1: "Neil Sandler", 8: "Harrison Katz", 5: "Carl Forster" },
+  7: { 4: "Michael Lynch", 3: "Mark Kaplowitz", 0: "John Young", 6: "Jeffrey Kaplan", 2: "Josh Klosk", 9: "Andrew Feldman", 7: "Jon Gottlieb", 1: "Bryan Bloom", 8: "Brendan Smith", 5: "Joe Liebeskind" },
+  2: { 4: "Brandon Resnick", 3: "Alex Cohen-Smith", 0: "Corey Zettler", 6: "Alexa Rivadeneira", 2: "Davis Najdecki", 9: "Adam Fixelle", 7: "Jon Diamond", 1: "James Nally", 8: "Eric Woznichak", 5: "John Young" },
+  4: { 4: "james Nally", 3: "Brandon Resnick", 0: "Carl Forster", 6: "Andres Patino", 2: "Andrew Oppenheimer", 9: "Pete Liebeskind", 7: "Corey Zettler", 1: "Robert (Bingo) Smith", 8: "Matthew Futterman", 5: "David Zion" },
+  0: { 4: "John Zisa", 3: "Josh Klosk", 0: "Davis Najdecki", 6: "Dave Trias", 2: "Chris Kennedy", 9: "David Zion", 7: "Bryan Bloom", 1: "Jaclyn Lindsay", 8: "Mike Tully", 5: "Jon Gottlieb" },
+  9: { 4: "Brendan Smith", 3: "Jenny Forster", 0: "Dave Lichtstein", 6: "Scott Yerganian", 2: "Jeffrey Kaplan", 9: "james Nally", 7: "Kevin Murphy", 1: "Arup Sen", 8: "Diane Vo", 5: "Jon Diamond" },
+  3: { 4: "Shaun Gluss", 3: "Jenn Fuller", 0: "Charlie Waldburger", 6: "Adam Liebeskind", 2: "Dave Zettler", 9: "John Young", 7: "Tyler Zettler", 1: "Chrissy Lo", 8: "Cristina Young", 5: "Bryan Bloom" },
+};
+
+function getSquaresFallback() {
+  const squares: any[] = [];
+  for (const [w, losers] of Object.entries(SQUARES_DATA)) {
+    for (const [l, name] of Object.entries(losers)) {
+      squares.push({
+        id: `fallback-${w}-${l}`,
+        win_digit: parseInt(w),
+        lose_digit: parseInt(l),
+        owner_name: name,
+      });
+    }
+  }
+  return squares;
+}
+
 function formatDate(d: Date): string {
   return d.toISOString().slice(0, 10).replace(/-/g, "");
 }
@@ -64,7 +94,6 @@ function parseEvent(event: any) {
     (venue.toLowerCase().includes("dayton") && !round);
   if (isFirstFour) round = "First Four";
 
-  // Extract start time from ESPN date field
   const startTime = event.date || competition?.date || null;
 
   return {
@@ -103,7 +132,7 @@ Deno.serve(async (req) => {
 
     const games = allEvents.map(parseEvent);
 
-    // Try to upsert to DB with a timeout, but don't fail if DB is unavailable
+    // Try DB with timeout, fall back gracefully
     let dbGames = null;
     let dbSquares = null;
     const dbTimeout = <T>(promise: Promise<T>, ms = 5000): Promise<T | null> =>
@@ -126,7 +155,6 @@ Deno.serve(async (req) => {
         dbGames = (selectResult as any).data;
       }
 
-      // Also try to fetch squares
       const squaresResult = await dbTimeout(
         supabase.from("squares").select("*")
       );
@@ -137,13 +165,15 @@ Deno.serve(async (req) => {
       console.error("DB connection error (non-fatal):", dbErr);
     }
 
-    // Return DB games if available, otherwise return ESPN data directly
     const returnGames = dbGames || games.sort((a: any, b: any) => 
       (a.start_time || "").localeCompare(b.start_time || "")
     );
 
+    // Use DB squares if available, otherwise use hardcoded fallback
+    const returnSquares = dbSquares || getSquaresFallback();
+
     return new Response(
-      JSON.stringify({ success: true, count: returnGames.length, games: returnGames, squares: dbSquares }),
+      JSON.stringify({ success: true, count: returnGames.length, games: returnGames, squares: returnSquares }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
