@@ -116,7 +116,7 @@ export function GameTicker({ games, onRefresh, isRefreshing }: GameTickerProps) 
               <span className="text-[10px] text-muted-foreground">No games scheduled. Auto-refresh every 60s.</span>
             )}
             {tickerGames.map((game) => (
-              <div key={game.id} className="flex items-center gap-1 shrink-0">
+              <div key={game.id || game.espn_id || `${game.home_team}-${game.away_team}`} className="flex items-center gap-1 shrink-0">
                 {game.status === "Live" && (
                   <span className="relative flex h-1.5 w-1.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75" />
