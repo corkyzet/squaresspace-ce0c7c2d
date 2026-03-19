@@ -144,15 +144,33 @@ Deno.serve(async (req) => {
 
     const games = allEvents.map(parseEvent);
 
-    // Upsert games into database
+    // Only upsert games that are NOT already Final in our DB
     if (games.length > 0) {
-      const { error: upsertError } = await supabase
+      // Get espn_ids already marked Final
+      const { data: finalGames } = await supabase
         .from("games")
-        .upsert(games, { onConflict: "espn_id" });
+        .select("espn_id")
+        .eq("status", "Final");
+      
+      const finalIds = new Set((finalGames || []).map((g: any) => g.espn_id));
+      
+      // Split: new finals to lock in, and non-final to update
+      const toUpsert = games.filter((g: any) => !finalIds.has(g.espn_id));
+      // Also upsert games that ESPN now says are Final but we haven't stored yet
+      const newFinals = games.filter((g: any) => g.status === "Final" && !finalIds.has(g.espn_id));
+      const combined = [...toUpsert, ...newFinals.filter((nf: any) => !toUpsert.find((u: any) => u.espn_id === nf.espn_id))];
+      
+      console.log(`Skipping ${finalIds.size} already-final games, upserting ${combined.length}`);
+      
+      if (combined.length > 0) {
+        const { error: upsertError } = await supabase
+          .from("games")
+          .upsert(combined, { onConflict: "espn_id" });
 
-      if (upsertError) {
-        console.error("Upsert error:", upsertError);
-        throw new Error(`Database upsert failed: ${upsertError.message}`);
+        if (upsertError) {
+          console.error("Upsert error:", upsertError);
+          throw new Error(`Database upsert failed: ${upsertError.message}`);
+        }
       }
     }
 
