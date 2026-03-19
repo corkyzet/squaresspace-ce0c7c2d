@@ -55,7 +55,7 @@ export function SquareCell({ winDigit, loseDigit, owner, winCount, isAdmin, onCe
         </span>
       )}
       {isWinner && (
-        <span className={`text-[6px] sm:text-[8px] font-mono-display font-bold mt-auto shrink-0 ${
+        <span className={`absolute bottom-0 right-0 text-[6px] sm:text-[8px] font-mono-display font-bold ${
           isHighlighted ? "text-accent" : "text-primary"
         }`}>
           🏆{winCount}
