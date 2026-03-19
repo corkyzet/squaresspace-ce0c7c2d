@@ -34,6 +34,7 @@ export function useSquares() {
       if (error) throw error;
       return data as Square[];
     },
+    staleTime: 30000,
   });
 
   const { data: games = [], ...gamesQuery } = useQuery({
@@ -43,6 +44,7 @@ export function useSquares() {
       if (error) throw error;
       return data as Game[];
     },
+    staleTime: 15000,
   });
 
   // Fetch live scores from ESPN via edge function
