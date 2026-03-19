@@ -103,31 +103,36 @@ Deno.serve(async (req) => {
 
     const games = allEvents.map(parseEvent);
 
-    // Upsert games into database in chunks to avoid timeouts
-    if (games.length > 0) {
-      for (let i = 0; i < games.length; i += 50) {
-        const chunk = games.slice(i, i + 50);
+    // Try to upsert to DB, but don't fail if DB is unavailable
+    let dbGames = null;
+    try {
+      if (games.length > 0) {
         const { error: upsertError } = await supabase
           .from("games")
-          .upsert(chunk, { onConflict: "espn_id" });
+          .upsert(games, { onConflict: "espn_id" });
 
         if (upsertError) {
-          console.error("Upsert error:", upsertError);
-          throw new Error(`Database upsert failed: ${upsertError.message}`);
+          console.error("Upsert error (non-fatal):", upsertError);
         }
       }
+
+      const { data, error: fetchError } = await supabase
+        .from("games")
+        .select("*")
+        .order("start_time", { ascending: true, nullsFirst: false });
+
+      if (!fetchError) dbGames = data;
+    } catch (dbErr) {
+      console.error("DB connection error (non-fatal):", dbErr);
     }
 
-    // Return all games from DB
-    const { data: allGames, error: fetchError } = await supabase
-      .from("games")
-      .select("*")
-      .order("start_time", { ascending: true, nullsFirst: false });
-
-    if (fetchError) throw new Error(`Fetch error: ${fetchError.message}`);
+    // Return DB games if available, otherwise return ESPN data directly
+    const returnGames = dbGames || games.sort((a: any, b: any) => 
+      (a.start_time || "").localeCompare(b.start_time || "")
+    );
 
     return new Response(
-      JSON.stringify({ success: true, count: games.length, games: allGames }),
+      JSON.stringify({ success: true, count: returnGames.length, games: returnGames }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
