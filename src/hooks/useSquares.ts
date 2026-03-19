@@ -43,6 +43,8 @@ export function useSquares() {
       if (error) throw error;
       return data as Game[];
     },
+    retry: 2,
+    retryDelay: 3000,
   });
 
   // Fetch live scores from ESPN via edge function
