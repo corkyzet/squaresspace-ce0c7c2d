@@ -91,10 +91,24 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch the full tournament date range in one call
     const today = new Date();
-    const year = today.getFullYear();
-    const allEvents = await fetchGamesForDate(`${year}0317-${year}0408`);
+    const todayStr = formatDate(today);
+    
+    // Fetch today's games first
+    const allEvents = await fetchGamesForDate(todayStr);
+    
+    // Also check yesterday for recently completed games
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    const yesterdayEvents = await fetchGamesForDate(formatDate(yesterday));
+    
+    const seenIds = new Set(allEvents.map((e: any) => e.id));
+    for (const e of yesterdayEvents) {
+      if (!seenIds.has(e.id)) {
+        allEvents.push(e);
+        seenIds.add(e.id);
+      }
+    }
 
     console.log(`Found ${allEvents.length} total events`);
 
