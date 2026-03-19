@@ -77,67 +77,50 @@ function getRegion(round: string | null): string {
 
 function BracketGame({ game, findOwner }: { game: Game; findOwner: (w: number, l: number) => string | null }) {
   const isFinal = game.status === "Final";
-  const winDigit = isFinal ? Math.max(game.home_score, game.away_score) % 10 : null;
-  const loseDigit = isFinal ? Math.min(game.home_score, game.away_score) % 10 : null;
+  const winScore = isFinal ? Math.max(game.home_score, game.away_score) : null;
+  const loseScore = isFinal ? Math.min(game.home_score, game.away_score) : null;
+  const winDigit = winScore !== null ? winScore % 10 : null;
+  const loseDigit = loseScore !== null ? loseScore % 10 : null;
   const squareOwner = winDigit !== null && loseDigit !== null ? findOwner(winDigit, loseDigit) : null;
 
   const homeWon = isFinal && game.home_score > game.away_score;
-  const awayWon = isFinal && game.away_score > game.home_score;
 
-  const rc = classifyRound(game.round);
+  // Order: winner first
+  const team1 = homeWon ? game.home_team : game.away_team;
+  const seed1 = homeWon ? game.home_seed : game.away_seed;
+  const team2 = homeWon ? game.away_team : game.home_team;
+  const seed2 = homeWon ? game.away_seed : game.home_seed;
 
   return (
-    <div className="ring-1 ring-inset ring-foreground/10 rounded-sm bg-foreground/5 overflow-hidden text-[11px] w-full">
-      {/* Home team */}
-      <div className={`flex items-center gap-1.5 px-2 py-1 ${homeWon ? "bg-primary/10" : ""}`}>
-        {game.home_seed && (
-          <span className="font-mono-display text-[9px] text-muted-foreground w-4 shrink-0">{game.home_seed}</span>
-        )}
-        <span className={`flex-1 truncate ${homeWon ? "text-foreground font-medium" : "text-foreground/70"}`}>
-          {game.home_team}
-        </span>
+    <div className="ring-1 ring-inset ring-foreground/10 rounded-sm bg-foreground/5 overflow-hidden text-[11px] w-full px-2 py-1.5">
+      <div className="flex items-center gap-1 flex-wrap">
+        <span className="font-medium text-foreground">{team1}</span>
+        {seed1 && <span className="font-mono-display text-[9px] text-muted-foreground">({seed1})</span>}
+        <span className="text-foreground/50">vs</span>
+        <span className="text-foreground/70">{team2}</span>
+        {seed2 && <span className="font-mono-display text-[9px] text-muted-foreground">({seed2})</span>}
         {isFinal && (
-          <span className={`font-mono-display text-[10px] font-semibold ${homeWon ? "text-primary" : "text-muted-foreground"}`}>
-            {game.home_score}
+          <span className="font-mono-display text-[10px] font-semibold text-primary ml-auto shrink-0">
+            {winScore}-{loseScore}
+          </span>
+        )}
+        {!isFinal && game.status !== "Scheduled" && (
+          <span className="ml-auto flex items-center gap-1">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75" />
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-destructive" />
+            </span>
+            <span className="text-[9px] text-destructive font-mono-display">
+              {game.home_score}-{game.away_score}
+            </span>
           </span>
         )}
       </div>
-      {/* Divider */}
-      <div className="h-px bg-foreground/5" />
-      {/* Away team */}
-      <div className={`flex items-center gap-1.5 px-2 py-1 ${awayWon ? "bg-primary/10" : ""}`}>
-        {game.away_seed && (
-          <span className="font-mono-display text-[9px] text-muted-foreground w-4 shrink-0">{game.away_seed}</span>
-        )}
-        <span className={`flex-1 truncate ${awayWon ? "text-foreground font-medium" : "text-foreground/70"}`}>
-          {game.away_team}
-        </span>
-        {isFinal && (
-          <span className={`font-mono-display text-[10px] font-semibold ${awayWon ? "text-primary" : "text-muted-foreground"}`}>
-            {game.away_score}
-          </span>
-        )}
-      </div>
-      {/* Square winner */}
       {isFinal && (
-        <div className="border-t border-foreground/10 px-2 py-0.5 flex items-center gap-1 bg-accent/5">
+        <div className="flex items-center gap-1 mt-0.5">
           <Trophy className="w-2.5 h-2.5 text-accent" />
           <span className="text-[9px] text-accent font-medium truncate">
-            {squareOwner || "Unclaimed"} [{winDigit},{loseDigit}]
-          </span>
-          {rc && (
-            <span className="text-[8px] text-muted-foreground ml-auto shrink-0">${rc.prize}</span>
-          )}
-        </div>
-      )}
-      {!isFinal && game.status === "Live" && (
-        <div className="border-t border-foreground/10 px-2 py-0.5 flex items-center gap-1 bg-destructive/5">
-          <span className="relative flex h-1.5 w-1.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75" />
-            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-destructive" />
-          </span>
-          <span className="text-[9px] text-destructive">
-            {game.home_score} - {game.away_score}
+            {squareOwner || "Unclaimed"}
           </span>
         </div>
       )}
