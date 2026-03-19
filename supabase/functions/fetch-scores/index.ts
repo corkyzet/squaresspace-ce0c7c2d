@@ -173,7 +173,7 @@ Deno.serve(async (req) => {
     // Return all games from DB
     const { data: allGames, error: fetchError } = await supabase
       .from("games")
-      .select("*")
+      .select("id, home_team, away_team, home_score, away_score, status, is_processed, espn_id, round, start_time, home_seed, away_seed")
       .order("start_time", { ascending: true, nullsFirst: false });
 
     if (fetchError) throw new Error(`Fetch error: ${fetchError.message}`);
