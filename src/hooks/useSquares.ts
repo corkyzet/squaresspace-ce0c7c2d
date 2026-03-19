@@ -50,6 +50,10 @@ export function useSquares() {
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke("fetch-scores");
       if (error) throw error;
+      // If the edge function returned games directly (DB fallback), update cache
+      if (data?.games) {
+        queryClient.setQueryData(["games"], data.games);
+      }
       return data;
     },
     onSuccess: () => {
