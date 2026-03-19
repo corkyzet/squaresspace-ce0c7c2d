@@ -68,24 +68,13 @@ export function useSquares() {
       if (data?.games) {
         queryClient.setQueryData(["games"], data.games);
       }
+      // Update squares cache if DB returned them
+      if (data?.squares) {
+        queryClient.setQueryData(["squares"], data.squares);
+      }
       return data;
     },
   });
-
-  // Realtime subscriptions
-  useEffect(() => {
-    const channel = supabase
-      .channel("realtime-all")
-      .on("postgres_changes", { event: "*", schema: "public", table: "squares" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["squares"] });
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "games" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["games"] });
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [queryClient]);
 
   // Auto-refresh scores every 60 seconds
   useEffect(() => {
