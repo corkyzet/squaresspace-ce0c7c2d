@@ -9,35 +9,9 @@ const corsHeaders = {
 const ESPN_SCOREBOARD_URL =
   "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard";
 
-function formatDate(d: Date): string {
-  return d.toISOString().slice(0, 10).replace(/-/g, "");
-}
-
-async function fetchGamesForDate(dateStr: string) {
-  const params = new URLSearchParams({
-    seasontype: "3",
-    groups: "100",
-    limit: "100",
-    dates: dateStr,
-  });
-
-  const espnUrl = `${ESPN_SCOREBOARD_URL}?${params}`;
-  console.log("Fetching ESPN scores:", espnUrl);
-
-  const espnRes = await fetch(espnUrl);
-  if (!espnRes.ok) {
-    const text = await espnRes.text();
-    throw new Error(`ESPN API error ${espnRes.status}: ${text}`);
-  }
-
-  const espnData = await espnRes.json();
-  return espnData.events || [];
-}
-
 function parseEvent(event: any) {
   const competition = event.competitions?.[0];
   const competitors = competition?.competitors || [];
-
   const home = competitors.find((c: any) => c.homeAway === "home") || competitors[0];
   const away = competitors.find((c: any) => c.homeAway === "away") || competitors[1];
 
@@ -51,8 +25,7 @@ function parseEvent(event: any) {
   const statusType = competition?.status?.type?.name || event.status?.type?.name;
   let status = "Scheduled";
   if (statusType === "STATUS_FINAL") status = "Final";
-  else if (statusType === "STATUS_IN_PROGRESS" || statusType === "STATUS_HALFTIME") status = "Live";
-  else if (statusType === "STATUS_END_PERIOD") status = "Live";
+  else if (statusType === "STATUS_IN_PROGRESS" || statusType === "STATUS_HALFTIME" || statusType === "STATUS_END_PERIOD") status = "Live";
 
   const notesHeadline = competition?.notes?.[0]?.headline || "";
   const typeDetail = competition?.type?.abbreviation || "";
@@ -64,8 +37,6 @@ function parseEvent(event: any) {
     (venue.toLowerCase().includes("dayton") && !round);
   if (isFirstFour) round = "First Four";
 
-  const startTime = event.date || competition?.date || null;
-
   return {
     espn_id: event.id,
     home_team: homeTeam,
@@ -76,7 +47,7 @@ function parseEvent(event: any) {
     away_seed: awaySeed,
     status,
     round,
-    start_time: startTime,
+    start_time: event.date || competition?.date || null,
   };
 }
 
@@ -90,50 +61,38 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Single ESPN fetch — date range covers the full tournament
-    const today = new Date();
-    const year = today.getFullYear();
-    const allEvents = await fetchGamesForDate(`${year}0317-${year}0408`);
+    // Single ESPN fetch for tournament date range
+    const year = new Date().getFullYear();
+    const params = new URLSearchParams({
+      seasontype: "3",
+      groups: "100",
+      limit: "100",
+      dates: `${year}0317-${year}0408`,
+    });
+    const espnRes = await fetch(`${ESPN_SCOREBOARD_URL}?${params}`);
+    if (!espnRes.ok) throw new Error(`ESPN API error ${espnRes.status}`);
+    const espnData = await espnRes.json();
+    const allEvents = espnData.events || [];
 
-    console.log(`Found ${allEvents.length} total events`);
+    console.log(`Found ${allEvents.length} events`);
     const games = allEvents.map(parseEvent);
 
-    // Upsert in small batches of 5 with delays to avoid statement timeout
-    const BATCH_SIZE = 5;
-    let successCount = 0;
-    for (let i = 0; i < games.length; i += BATCH_SIZE) {
-      const batch = games.slice(i, i + BATCH_SIZE);
+    // Upsert one at a time — each is a tiny fast operation
+    let ok = 0;
+    for (const game of games) {
       const { error } = await supabase
         .from("games")
-        .upsert(batch, { onConflict: "espn_id" });
-
-      if (error) {
-        console.error(`Batch ${i / BATCH_SIZE + 1} error:`, error.message);
-        // Try one-by-one for failed batch
-        for (const game of batch) {
-          const { error: singleErr } = await supabase
-            .from("games")
-            .upsert([game], { onConflict: "espn_id" });
-          if (!singleErr) successCount++;
-          else console.error(`Single upsert fail ${game.espn_id}:`, singleErr.message);
-        }
-      } else {
-        successCount += batch.length;
-      }
+        .upsert([game], { onConflict: "espn_id", ignoreDuplicates: false });
+      if (error) console.error(`Fail ${game.espn_id}: ${error.message}`);
+      else ok++;
     }
+    console.log(`Upserted ${ok}/${games.length}`);
 
-    console.log(`Upserted ${successCount}/${games.length} games`);
-
-    // Return all games from DB
-    const { data: allGames, error: fetchError } = await supabase
-      .from("games")
-      .select("*")
-      .order("start_time", { ascending: true, nullsFirst: false });
-
-    if (fetchError) throw new Error(`Fetch error: ${fetchError.message}`);
+    const { data: allGames } = await supabase
+      .from("games").select("*").order("start_time", { ascending: true, nullsFirst: false });
 
     return new Response(
-      JSON.stringify({ success: true, count: successCount, games: allGames }),
+      JSON.stringify({ success: true, count: ok, games: allGames }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
