@@ -6,6 +6,8 @@ import { Bracket } from "@/components/Bracket";
 import { Leaderboard } from "@/components/Leaderboard";
 import { AdminModal } from "@/components/AdminModal";
 import { PlayerFilter } from "@/components/PlayerFilter";
+import { CollectionsSummary } from "@/components/CollectionsSummary";
+import { PayoutTracker } from "@/components/PayoutTracker";
 import { Shield, ShieldOff, Lock, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
