@@ -13,12 +13,6 @@ function formatDate(d: Date): string {
   return d.toISOString().slice(0, 10).replace(/-/g, "");
 }
 
-function addDays(date: Date, days: number): Date {
-  const next = new Date(date);
-  next.setDate(next.getDate() + days);
-  return next;
-}
-
 async function fetchGamesForDate(dateStr: string) {
   const params = new URLSearchParams({
     seasontype: "3",
@@ -97,83 +91,75 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Fetch full tournament date range (March 17 - April 7 roughly)
     const today = new Date();
     const year = today.getFullYear();
+    const startDate = `${year}0317`;
+    const endDate = `${year}0408`;
+    
+    // ESPN allows date ranges with the dates param
+    const allEvents = await fetchGamesForDate(`${startDate}-${endDate}`);
+    
+    // Also fetch today + upcoming for the ticker
+    const todayStr = formatDate(today);
+    const todayEvents = await fetchGamesForDate(todayStr);
+    
+    // Merge without duplicates
+    const seenIds = new Set(allEvents.map((e: any) => e.id));
+    for (const e of todayEvents) {
+      if (!seenIds.has(e.id)) {
+        allEvents.push(e);
+        seenIds.add(e.id);
+      }
+    }
+    
+    // If no non-First-Four games today, look ahead for ticker
+    const nonFirstFour = todayEvents.filter((e: any) => {
+      const notes = e.competitions?.[0]?.notes?.[0]?.headline || "";
+      const venue = e.competitions?.[0]?.venue?.fullName || "";
+      return !notes.toLowerCase().includes("first four") && !venue.toLowerCase().includes("dayton");
+    });
 
-    const { count: existingGamesCount, error: countError } = await supabase
-      .from("games")
-      .select("id", { count: "exact", head: true });
-
-    if (countError) {
-      throw new Error(`Game count fetch failed: ${countError.message}`);
+    if (nonFirstFour.length === 0) {
+      for (let i = 1; i <= 7; i++) {
+        const futureDate = new Date(today);
+        futureDate.setDate(today.getDate() + i);
+        const futureEvents = await fetchGamesForDate(formatDate(futureDate));
+        for (const e of futureEvents) {
+          if (!seenIds.has(e.id)) {
+            allEvents.push(e);
+            seenIds.add(e.id);
+          }
+        }
+        const futurNonFF = futureEvents.filter((e: any) => {
+          const notes = e.competitions?.[0]?.notes?.[0]?.headline || "";
+          const venue = e.competitions?.[0]?.venue?.fullName || "";
+          return !notes.toLowerCase().includes("first four") && !venue.toLowerCase().includes("dayton");
+        });
+        if (futurNonFF.length > 0) break;
+      }
     }
 
-    const hasBootstrappedTournament = (existingGamesCount ?? 0) >= 40;
-
-    // Bootstrap once with full range, then use a light rolling window for refreshes.
-    const allEvents = hasBootstrappedTournament
-      ? await fetchGamesForDate(`${formatDate(addDays(today, -1))}-${formatDate(addDays(today, 7))}`)
-      : await fetchGamesForDate(`${year}0317-${year}0408`);
-
-    console.log(
-      `Found ${allEvents.length} events (${hasBootstrappedTournament ? "rolling window" : "full bootstrap"})`
-    );
+    console.log(`Found ${allEvents.length} total events`);
 
     const games = allEvents.map(parseEvent);
 
-    // Upsert only changed games to reduce DB load and response latency.
+    // Upsert games into database
     if (games.length > 0) {
-      const espnIds = games.map((g) => g.espn_id).filter(Boolean) as string[];
-      let gamesToUpsert = games;
+      const { error: upsertError } = await supabase
+        .from("games")
+        .upsert(games, { onConflict: "espn_id" });
 
-      if (espnIds.length > 0) {
-        const { data: existingGames, error: existingError } = await supabase
-          .from("games")
-          .select("espn_id, home_team, away_team, home_score, away_score, home_seed, away_seed, status, round, start_time")
-          .in("espn_id", espnIds);
-
-        if (existingError) {
-          throw new Error(`Existing games fetch failed: ${existingError.message}`);
-        }
-
-        const existingById = new Map((existingGames ?? []).map((g: any) => [g.espn_id, g]));
-
-        gamesToUpsert = games.filter((game) => {
-          const existing = existingById.get(game.espn_id);
-          if (!existing) return true;
-
-          return (
-            existing.home_team !== game.home_team ||
-            existing.away_team !== game.away_team ||
-            existing.home_score !== game.home_score ||
-            existing.away_score !== game.away_score ||
-            existing.home_seed !== game.home_seed ||
-            existing.away_seed !== game.away_seed ||
-            existing.status !== game.status ||
-            existing.round !== game.round ||
-            existing.start_time !== game.start_time
-          );
-        });
-      }
-
-      console.log(`Skipping ${games.length - gamesToUpsert.length} unchanged games, upserting ${gamesToUpsert.length}`);
-
-      if (gamesToUpsert.length > 0) {
-        const { error: upsertError } = await supabase
-          .from("games")
-          .upsert(gamesToUpsert, { onConflict: "espn_id" });
-
-        if (upsertError) {
-          console.error("Upsert error:", upsertError);
-          throw new Error(`Database upsert failed: ${upsertError.message}`);
-        }
+      if (upsertError) {
+        console.error("Upsert error:", upsertError);
+        throw new Error(`Database upsert failed: ${upsertError.message}`);
       }
     }
 
     // Return all games from DB
     const { data: allGames, error: fetchError } = await supabase
       .from("games")
-      .select("id, home_team, away_team, home_score, away_score, status, is_processed, espn_id, round, start_time, home_seed, away_seed")
+      .select("*")
       .order("start_time", { ascending: true, nullsFirst: false });
 
     if (fetchError) throw new Error(`Fetch error: ${fetchError.message}`);

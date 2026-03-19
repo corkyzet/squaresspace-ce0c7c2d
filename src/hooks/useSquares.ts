@@ -1,28 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect, useRef } from "react";
-
-const SQUARES_CACHE_KEY = "squares-cache-v1";
-const GAMES_CACHE_KEY = "games-cache-v1";
-
-function readCachedData<T>(key: string): T | undefined {
-  if (typeof window === "undefined") return undefined;
-  try {
-    const value = window.localStorage.getItem(key);
-    return value ? (JSON.parse(value) as T) : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function writeCachedData<T>(key: string, data: T): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(key, JSON.stringify(data));
-  } catch {
-    // Ignore cache write failures (private mode / storage limits)
-  }
-}
+import { useEffect, useCallback } from "react";
 
 export type Square = {
   id: string;
@@ -48,45 +26,24 @@ export type Game = {
 
 export function useSquares() {
   const queryClient = useQueryClient();
-  const isSyncingScores = useRef(false);
 
   const { data: squares = [], ...squaresQuery } = useQuery({
     queryKey: ["squares"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("squares")
-        .select("id, win_digit, lose_digit, owner_name");
+      const { data, error } = await supabase.from("squares").select("*");
       if (error) throw error;
       return data as Square[];
     },
-    initialData: () => readCachedData<Square[]>(SQUARES_CACHE_KEY),
-    staleTime: 60000,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
   });
 
   const { data: games = [], ...gamesQuery } = useQuery({
     queryKey: ["games"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("games")
-        .select("id, home_team, away_team, home_score, away_score, status, is_processed, espn_id, round, start_time, home_seed, away_seed");
+      const { data, error } = await supabase.from("games").select("*");
       if (error) throw error;
       return data as Game[];
     },
-    initialData: () => readCachedData<Game[]>(GAMES_CACHE_KEY),
-    staleTime: 180000,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
   });
-
-  useEffect(() => {
-    if (squares.length > 0) writeCachedData(SQUARES_CACHE_KEY, squares);
-  }, [squares]);
-
-  useEffect(() => {
-    if (games.length > 0) writeCachedData(GAMES_CACHE_KEY, games);
-  }, [games]);
 
   // Fetch live scores from ESPN via edge function
   const fetchScores = useMutation({
@@ -95,64 +52,32 @@ export function useSquares() {
       if (error) throw error;
       return data;
     },
-    onMutate: () => {
-      isSyncingScores.current = true;
-    },
-    onSuccess: (data) => {
-      if (Array.isArray(data?.games)) {
-        queryClient.setQueryData(["games"], data.games as Game[]);
-      }
-    },
-    onSettled: () => {
-      isSyncingScores.current = false;
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["games"] });
     },
   });
 
-  // Realtime subscription (squares only). Games are refreshed by fetchScores to avoid request storms.
+  // Realtime subscriptions
   useEffect(() => {
     const channel = supabase
-      .channel("realtime-squares")
+      .channel("realtime-all")
       .on("postgres_changes", { event: "*", schema: "public", table: "squares" }, () => {
         queryClient.invalidateQueries({ queryKey: ["squares"] });
       })
+      .on("postgres_changes", { event: "*", schema: "public", table: "games" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["games"] });
+      })
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [queryClient]);
 
-  // Start score sync only after initial data is rendered
-  const isInitialDataReady = !squaresQuery.isLoading && !gamesQuery.isLoading;
-
+  // Auto-refresh scores every 60 seconds
   useEffect(() => {
-    if (!isInitialDataReady) return;
-
-    const connection =
-      typeof navigator !== "undefined"
-        ? (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection
-        : undefined;
-
-    const isConstrainedConnection = Boolean(
-      connection?.saveData ||
-        connection?.effectiveType?.includes("2g") ||
-        connection?.effectiveType?.includes("3g")
-    );
-
-    const runScoreSync = () => {
-      if (isSyncingScores.current) return;
-      fetchScores.mutate();
-    };
-
-    const initialDelayMs = isConstrainedConnection ? 20000 : 10000;
-    const initialTimeout = setTimeout(runScoreSync, initialDelayMs);
-    const interval = setInterval(runScoreSync, 180000);
-
-    return () => {
-      clearTimeout(initialTimeout);
-      clearInterval(interval);
-    };
-  }, [isInitialDataReady, fetchScores.mutate]);
+    fetchScores.mutate();
+    const interval = setInterval(() => fetchScores.mutate(), 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const updateSquare = useMutation({
     mutationFn: async ({ win_digit, lose_digit, owner_name }: { win_digit: number; lose_digit: number; owner_name: string }) => {
