@@ -39,12 +39,21 @@ export function useSquares() {
   const { data: games = [], ...gamesQuery } = useQuery({
     queryKey: ["games"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("games").select("*");
-      if (error) throw error;
-      return data as Game[];
+      // Try DB first, fall back to edge function
+      try {
+        const { data, error } = await supabase.from("games").select("*");
+        if (error) throw error;
+        return data as Game[];
+      } catch {
+        // DB unavailable, fetch from edge function directly
+        const { data, error } = await supabase.functions.invoke("fetch-scores");
+        if (error) throw error;
+        return (data?.games ?? []) as Game[];
+      }
     },
     retry: 2,
     retryDelay: 3000,
+    staleTime: 60000,
   });
 
   // Fetch live scores from ESPN via edge function
@@ -52,14 +61,11 @@ export function useSquares() {
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke("fetch-scores");
       if (error) throw error;
-      // If the edge function returned games directly (DB fallback), update cache
+      // Update games cache directly with the response
       if (data?.games) {
         queryClient.setQueryData(["games"], data.games);
       }
       return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["games"] });
     },
   });
 
