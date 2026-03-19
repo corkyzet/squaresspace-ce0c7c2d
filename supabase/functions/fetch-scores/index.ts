@@ -103,25 +103,27 @@ Deno.serve(async (req) => {
 
     const games = allEvents.map(parseEvent);
 
-    // Try to upsert to DB, but don't fail if DB is unavailable
+    // Try to upsert to DB with a timeout, but don't fail if DB is unavailable
     let dbGames = null;
+    const dbTimeout = <T>(promise: Promise<T>, ms = 5000): Promise<T | null> =>
+      Promise.race([promise, new Promise<null>((resolve) => setTimeout(() => resolve(null), ms))]);
+
     try {
       if (games.length > 0) {
-        const { error: upsertError } = await supabase
-          .from("games")
-          .upsert(games, { onConflict: "espn_id" });
-
-        if (upsertError) {
-          console.error("Upsert error (non-fatal):", upsertError);
+        const upsertResult = await dbTimeout(
+          supabase.from("games").upsert(games, { onConflict: "espn_id" })
+        );
+        if (upsertResult && (upsertResult as any).error) {
+          console.error("Upsert error (non-fatal):", (upsertResult as any).error);
         }
       }
 
-      const { data, error: fetchError } = await supabase
-        .from("games")
-        .select("*")
-        .order("start_time", { ascending: true, nullsFirst: false });
-
-      if (!fetchError) dbGames = data;
+      const selectResult = await dbTimeout(
+        supabase.from("games").select("*").order("start_time", { ascending: true, nullsFirst: false })
+      );
+      if (selectResult && !(selectResult as any).error) {
+        dbGames = (selectResult as any).data;
+      }
     } catch (dbErr) {
       console.error("DB connection error (non-fatal):", dbErr);
     }
