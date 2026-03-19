@@ -35,6 +35,8 @@ export function useSquares() {
       return data as Square[];
     },
     staleTime: 30000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   const { data: games = [], ...gamesQuery } = useQuery({
@@ -44,7 +46,9 @@ export function useSquares() {
       if (error) throw error;
       return data as Game[];
     },
-    staleTime: 15000,
+    staleTime: 60000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   // Fetch live scores from ESPN via edge function
@@ -54,32 +58,41 @@ export function useSquares() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["games"] });
+    onSuccess: (data) => {
+      if (Array.isArray(data?.games)) {
+        queryClient.setQueryData(["games"], data.games as Game[]);
+      }
     },
   });
 
-  // Realtime subscriptions
+  // Realtime subscription (squares only). Games are refreshed by fetchScores to avoid request storms.
   useEffect(() => {
     const channel = supabase
-      .channel("realtime-all")
+      .channel("realtime-squares")
       .on("postgres_changes", { event: "*", schema: "public", table: "squares" }, () => {
         queryClient.invalidateQueries({ queryKey: ["squares"] });
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "games" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["games"] });
-      })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [queryClient]);
 
-  // Auto-refresh scores — delay initial fetch so UI renders first
+  // Start score sync only after initial data is rendered
+  const isInitialDataReady = !squaresQuery.isLoading && !gamesQuery.isLoading;
+
   useEffect(() => {
-    const initialTimeout = setTimeout(() => fetchScores.mutate(), 3000);
-    const interval = setInterval(() => fetchScores.mutate(), 60000);
-    return () => { clearTimeout(initialTimeout); clearInterval(interval); };
-  }, []);
+    if (!isInitialDataReady) return;
+
+    const initialTimeout = setTimeout(() => fetchScores.mutate(), 5000);
+    const interval = setInterval(() => fetchScores.mutate(), 120000);
+
+    return () => {
+      clearTimeout(initialTimeout);
+      clearInterval(interval);
+    };
+  }, [isInitialDataReady]);
 
   const updateSquare = useMutation({
     mutationFn: async ({ win_digit, lose_digit, owner_name }: { win_digit: number; lose_digit: number; owner_name: string }) => {
