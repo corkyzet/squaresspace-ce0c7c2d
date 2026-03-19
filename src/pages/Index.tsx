@@ -6,6 +6,8 @@ import { Bracket } from "@/components/Bracket";
 import { Leaderboard } from "@/components/Leaderboard";
 import { AdminModal } from "@/components/AdminModal";
 import { PlayerFilter } from "@/components/PlayerFilter";
+import { CollectionsSummary } from "@/components/CollectionsSummary";
+import { PayoutTracker } from "@/components/PayoutTracker";
 import { Shield, ShieldOff, Lock, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -153,23 +155,28 @@ const Index = () => {
         />
 
         <div className="flex-1 flex flex-col lg:flex-row">
-          <div className="flex-1 p-2 sm:p-4">
-            <p className="text-xs text-muted-foreground mb-3 font-mono-display">
-              Click any square to assign or change the owner.
-            </p>
-            {squaresLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <span className="font-mono-display text-sm text-muted-foreground animate-pulse">Loading grid...</span>
-              </div>
-            ) : (
-              <SquaresGrid
-                findOwner={findOwner}
-                getWinCount={getWinCount}
-                isAdmin={isAdmin}
-                onCellClick={handleCellClick}
-                highlightOwners={highlightOwners}
-              />
-            )}
+          <div className="flex-1 p-2 sm:p-4 space-y-6">
+            <CollectionsSummary />
+            <PayoutTracker />
+
+            <div>
+              <p className="text-xs text-muted-foreground mb-3 font-mono-display">
+                Click any square to assign or change the owner.
+              </p>
+              {squaresLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <span className="font-mono-display text-sm text-muted-foreground animate-pulse">Loading grid...</span>
+                </div>
+              ) : (
+                <SquaresGrid
+                  findOwner={findOwner}
+                  getWinCount={getWinCount}
+                  isAdmin={isAdmin}
+                  onCellClick={handleCellClick}
+                  highlightOwners={highlightOwners}
+                />
+              )}
+            </div>
           </div>
 
           <Leaderboard
