@@ -1,6 +1,28 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect, useCallback } from "react";
+import { useEffect, useRef } from "react";
+
+const SQUARES_CACHE_KEY = "squares-cache-v1";
+const GAMES_CACHE_KEY = "games-cache-v1";
+
+function readCachedData<T>(key: string): T | undefined {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const value = window.localStorage.getItem(key);
+    return value ? (JSON.parse(value) as T) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function writeCachedData<T>(key: string, data: T): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(data));
+  } catch {
+    // Ignore cache write failures (private mode / storage limits)
+  }
+}
 
 export type Square = {
   id: string;
@@ -26,15 +48,19 @@ export type Game = {
 
 export function useSquares() {
   const queryClient = useQueryClient();
+  const isSyncingScores = useRef(false);
 
   const { data: squares = [], ...squaresQuery } = useQuery({
     queryKey: ["squares"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("squares").select("*");
+      const { data, error } = await supabase
+        .from("squares")
+        .select("id, win_digit, lose_digit, owner_name");
       if (error) throw error;
       return data as Square[];
     },
-    staleTime: 30000,
+    initialData: () => readCachedData<Square[]>(SQUARES_CACHE_KEY),
+    staleTime: 60000,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
@@ -42,14 +68,25 @@ export function useSquares() {
   const { data: games = [], ...gamesQuery } = useQuery({
     queryKey: ["games"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("games").select("*");
+      const { data, error } = await supabase
+        .from("games")
+        .select("id, home_team, away_team, home_score, away_score, status, is_processed, espn_id, round, start_time, home_seed, away_seed");
       if (error) throw error;
       return data as Game[];
     },
-    staleTime: 60000,
+    initialData: () => readCachedData<Game[]>(GAMES_CACHE_KEY),
+    staleTime: 180000,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
+
+  useEffect(() => {
+    if (squares.length > 0) writeCachedData(SQUARES_CACHE_KEY, squares);
+  }, [squares]);
+
+  useEffect(() => {
+    if (games.length > 0) writeCachedData(GAMES_CACHE_KEY, games);
+  }, [games]);
 
   // Fetch live scores from ESPN via edge function
   const fetchScores = useMutation({
@@ -58,10 +95,16 @@ export function useSquares() {
       if (error) throw error;
       return data;
     },
+    onMutate: () => {
+      isSyncingScores.current = true;
+    },
     onSuccess: (data) => {
       if (Array.isArray(data?.games)) {
         queryClient.setQueryData(["games"], data.games as Game[]);
       }
+    },
+    onSettled: () => {
+      isSyncingScores.current = false;
     },
   });
 
@@ -85,14 +128,31 @@ export function useSquares() {
   useEffect(() => {
     if (!isInitialDataReady) return;
 
-    const initialTimeout = setTimeout(() => fetchScores.mutate(), 5000);
-    const interval = setInterval(() => fetchScores.mutate(), 120000);
+    const connection =
+      typeof navigator !== "undefined"
+        ? (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection
+        : undefined;
+
+    const isConstrainedConnection = Boolean(
+      connection?.saveData ||
+        connection?.effectiveType?.includes("2g") ||
+        connection?.effectiveType?.includes("3g")
+    );
+
+    const runScoreSync = () => {
+      if (isSyncingScores.current) return;
+      fetchScores.mutate();
+    };
+
+    const initialDelayMs = isConstrainedConnection ? 20000 : 10000;
+    const initialTimeout = setTimeout(runScoreSync, initialDelayMs);
+    const interval = setInterval(runScoreSync, 180000);
 
     return () => {
       clearTimeout(initialTimeout);
       clearInterval(interval);
     };
-  }, [isInitialDataReady]);
+  }, [isInitialDataReady, fetchScores.mutate]);
 
   const updateSquare = useMutation({
     mutationFn: async ({ win_digit, lose_digit, owner_name }: { win_digit: number; lose_digit: number; owner_name: string }) => {
