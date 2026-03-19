@@ -13,6 +13,12 @@ function formatDate(d: Date): string {
   return d.toISOString().slice(0, 10).replace(/-/g, "");
 }
 
+function addDays(date: Date, days: number): Date {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
 async function fetchGamesForDate(dateStr: string) {
   const params = new URLSearchParams({
     seasontype: "3",
