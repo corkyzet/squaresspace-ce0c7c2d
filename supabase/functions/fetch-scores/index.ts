@@ -9,9 +9,35 @@ const corsHeaders = {
 const ESPN_SCOREBOARD_URL =
   "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard";
 
+function formatDate(d: Date): string {
+  return d.toISOString().slice(0, 10).replace(/-/g, "");
+}
+
+async function fetchGamesForDate(dateStr: string) {
+  const params = new URLSearchParams({
+    seasontype: "3",
+    groups: "100",
+    limit: "100",
+    dates: dateStr,
+  });
+
+  const espnUrl = `${ESPN_SCOREBOARD_URL}?${params}`;
+  console.log("Fetching ESPN scores:", espnUrl);
+
+  const espnRes = await fetch(espnUrl);
+  if (!espnRes.ok) {
+    const text = await espnRes.text();
+    throw new Error(`ESPN API error ${espnRes.status}: ${text}`);
+  }
+
+  const espnData = await espnRes.json();
+  return espnData.events || [];
+}
+
 function parseEvent(event: any) {
   const competition = event.competitions?.[0];
   const competitors = competition?.competitors || [];
+
   const home = competitors.find((c: any) => c.homeAway === "home") || competitors[0];
   const away = competitors.find((c: any) => c.homeAway === "away") || competitors[1];
 
@@ -25,7 +51,8 @@ function parseEvent(event: any) {
   const statusType = competition?.status?.type?.name || event.status?.type?.name;
   let status = "Scheduled";
   if (statusType === "STATUS_FINAL") status = "Final";
-  else if (statusType === "STATUS_IN_PROGRESS" || statusType === "STATUS_HALFTIME" || statusType === "STATUS_END_PERIOD") status = "Live";
+  else if (statusType === "STATUS_IN_PROGRESS" || statusType === "STATUS_HALFTIME") status = "Live";
+  else if (statusType === "STATUS_END_PERIOD") status = "Live";
 
   const notesHeadline = competition?.notes?.[0]?.headline || "";
   const typeDetail = competition?.type?.abbreviation || "";
@@ -37,6 +64,9 @@ function parseEvent(event: any) {
     (venue.toLowerCase().includes("dayton") && !round);
   if (isFirstFour) round = "First Four";
 
+  // Extract start time from ESPN date field
+  const startTime = event.date || competition?.date || null;
+
   return {
     espn_id: event.id,
     home_team: homeTeam,
@@ -47,7 +77,7 @@ function parseEvent(event: any) {
     away_seed: awaySeed,
     status,
     round,
-    start_time: event.date || competition?.date || null,
+    start_time: startTime,
   };
 }
 
@@ -61,38 +91,81 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Single ESPN fetch for tournament date range
-    const year = new Date().getFullYear();
-    const params = new URLSearchParams({
-      seasontype: "3",
-      groups: "100",
-      limit: "100",
-      dates: `${year}0317-${year}0408`,
+    // Fetch full tournament date range (March 17 - April 7 roughly)
+    const today = new Date();
+    const year = today.getFullYear();
+    const startDate = `${year}0317`;
+    const endDate = `${year}0408`;
+    
+    // ESPN allows date ranges with the dates param
+    const allEvents = await fetchGamesForDate(`${startDate}-${endDate}`);
+    
+    // Also fetch today + upcoming for the ticker
+    const todayStr = formatDate(today);
+    const todayEvents = await fetchGamesForDate(todayStr);
+    
+    // Merge without duplicates
+    const seenIds = new Set(allEvents.map((e: any) => e.id));
+    for (const e of todayEvents) {
+      if (!seenIds.has(e.id)) {
+        allEvents.push(e);
+        seenIds.add(e.id);
+      }
+    }
+    
+    // If no non-First-Four games today, look ahead for ticker
+    const nonFirstFour = todayEvents.filter((e: any) => {
+      const notes = e.competitions?.[0]?.notes?.[0]?.headline || "";
+      const venue = e.competitions?.[0]?.venue?.fullName || "";
+      return !notes.toLowerCase().includes("first four") && !venue.toLowerCase().includes("dayton");
     });
-    const espnRes = await fetch(`${ESPN_SCOREBOARD_URL}?${params}`);
-    if (!espnRes.ok) throw new Error(`ESPN API error ${espnRes.status}`);
-    const espnData = await espnRes.json();
-    const allEvents = espnData.events || [];
 
-    console.log(`Found ${allEvents.length} events`);
+    if (nonFirstFour.length === 0) {
+      for (let i = 1; i <= 7; i++) {
+        const futureDate = new Date(today);
+        futureDate.setDate(today.getDate() + i);
+        const futureEvents = await fetchGamesForDate(formatDate(futureDate));
+        for (const e of futureEvents) {
+          if (!seenIds.has(e.id)) {
+            allEvents.push(e);
+            seenIds.add(e.id);
+          }
+        }
+        const futurNonFF = futureEvents.filter((e: any) => {
+          const notes = e.competitions?.[0]?.notes?.[0]?.headline || "";
+          const venue = e.competitions?.[0]?.venue?.fullName || "";
+          return !notes.toLowerCase().includes("first four") && !venue.toLowerCase().includes("dayton");
+        });
+        if (futurNonFF.length > 0) break;
+      }
+    }
+
+    console.log(`Found ${allEvents.length} total events`);
+
     const games = allEvents.map(parseEvent);
 
-    // Upsert one at a time — each is a tiny fast operation
-    let ok = 0;
-    for (const game of games) {
-      const { error } = await supabase
+    // Upsert games into database
+    if (games.length > 0) {
+      const { error: upsertError } = await supabase
         .from("games")
-        .upsert([game], { onConflict: "espn_id", ignoreDuplicates: false });
-      if (error) console.error(`Fail ${game.espn_id}: ${error.message}`);
-      else ok++;
-    }
-    console.log(`Upserted ${ok}/${games.length}`);
+        .upsert(games, { onConflict: "espn_id" });
 
-    const { data: allGames } = await supabase
-      .from("games").select("*").order("start_time", { ascending: true, nullsFirst: false });
+      if (upsertError) {
+        console.error("Upsert error:", upsertError);
+        throw new Error(`Database upsert failed: ${upsertError.message}`);
+      }
+    }
+
+    // Return all games from DB
+    const { data: allGames, error: fetchError } = await supabase
+      .from("games")
+      .select("*")
+      .order("start_time", { ascending: true, nullsFirst: false });
+
+    if (fetchError) throw new Error(`Fetch error: ${fetchError.message}`);
 
     return new Response(
-      JSON.stringify({ success: true, count: ok, games: allGames }),
+      JSON.stringify({ success: true, count: games.length, games: allGames }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
