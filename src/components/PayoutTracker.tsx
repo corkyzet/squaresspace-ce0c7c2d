@@ -91,22 +91,22 @@ export function PayoutTracker() {
     }) => {
       if (payoutId) {
         const { error } = await supabase
-          .from("payouts")
+          .from("payouts" as any)
           .update({
             is_paid: !isPaid,
             paid_date: !isPaid ? new Date().toISOString() : null,
-          })
+          } as any)
           .eq("id", payoutId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("payouts").insert({
+        const { error } = await supabase.from("payouts" as any).insert({
           game_id: gameId,
           participant_name: owner,
           amount,
           round,
           is_paid: true,
           paid_date: new Date().toISOString(),
-        });
+        } as any);
         if (error) throw error;
       }
     },

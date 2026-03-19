@@ -16,11 +16,11 @@ export function CollectionsSummary() {
     queryKey: ["collections"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("collections")
+        .from("collections" as any)
         .select("*")
         .order("collector");
       if (error) throw error;
-      return data as Collection[];
+      return data as unknown as Collection[];
     },
   });
 
