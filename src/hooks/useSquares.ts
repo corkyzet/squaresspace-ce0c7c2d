@@ -34,6 +34,9 @@ export function useSquares() {
       if (error) throw error;
       return data as Square[];
     },
+    retry: 3,
+    retryDelay: 5000,
+    staleTime: 60000,
   });
 
   const { data: games = [], ...gamesQuery } = useQuery({
