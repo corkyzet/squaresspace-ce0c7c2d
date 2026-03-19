@@ -144,14 +144,16 @@ Deno.serve(async (req) => {
 
     const games = allEvents.map(parseEvent);
 
-    // Upsert games into database
-    if (games.length > 0) {
+    // Upsert games in batches of 10 to avoid statement timeout
+    const BATCH_SIZE = 10;
+    for (let i = 0; i < games.length; i += BATCH_SIZE) {
+      const batch = games.slice(i, i + BATCH_SIZE);
       const { error: upsertError } = await supabase
         .from("games")
-        .upsert(games, { onConflict: "espn_id" });
+        .upsert(batch, { onConflict: "espn_id" });
 
       if (upsertError) {
-        console.error("Upsert error:", upsertError);
+        console.error(`Upsert error (batch ${i / BATCH_SIZE + 1}):`, upsertError);
         throw new Error(`Database upsert failed: ${upsertError.message}`);
       }
     }
