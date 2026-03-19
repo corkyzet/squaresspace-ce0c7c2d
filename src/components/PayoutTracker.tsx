@@ -23,9 +23,9 @@ export function PayoutTracker() {
   const { data: payouts = [], isLoading } = useQuery({
     queryKey: ["payouts"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("payouts").select("*");
+      const { data, error } = await supabase.from("payouts" as any).select("*");
       if (error) throw error;
-      return data as Payout[];
+      return data as unknown as Payout[];
     },
   });
 
