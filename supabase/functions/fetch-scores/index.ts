@@ -64,7 +64,6 @@ function parseEvent(event: any) {
     (venue.toLowerCase().includes("dayton") && !round);
   if (isFirstFour) round = "First Four";
 
-  // Extract start time from ESPN date field
   const startTime = event.date || competition?.date || null;
 
   return {
@@ -89,53 +88,41 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      db: { schema: "public" },
-      global: { headers: { "x-connection-timeout": "30000" } },
-    });
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Only fetch the date range — this already includes today's games
+    // Single ESPN fetch — date range covers the full tournament
     const today = new Date();
     const year = today.getFullYear();
-    const startDate = `${year}0317`;
-    const endDate = `${year}0408`;
-    
-    const allEvents = await fetchGamesForDate(`${startDate}-${endDate}`);
-    
-    // If the range returned nothing for today/upcoming, fetch today specifically
-    const todayStr = formatDate(today);
-    const hasTodayGames = allEvents.some((e: any) => (e.date || "").startsWith(today.toISOString().slice(0, 10)));
-    
-    if (!hasTodayGames) {
-      const todayEvents = await fetchGamesForDate(todayStr);
-      const seenIds = new Set(allEvents.map((e: any) => e.id));
-      for (const e of todayEvents) {
-        if (!seenIds.has(e.id)) {
-          allEvents.push(e);
-        }
-      }
-    }
+    const allEvents = await fetchGamesForDate(`${year}0317-${year}0408`);
 
     console.log(`Found ${allEvents.length} total events`);
-
     const games = allEvents.map(parseEvent);
 
-    // Upsert games one-by-one to avoid statement timeout
-    let upsertErrors = 0;
-    for (const game of games) {
-      const { error: upsertError } = await supabase
+    // Upsert in small batches of 5 with delays to avoid statement timeout
+    const BATCH_SIZE = 5;
+    let successCount = 0;
+    for (let i = 0; i < games.length; i += BATCH_SIZE) {
+      const batch = games.slice(i, i + BATCH_SIZE);
+      const { error } = await supabase
         .from("games")
-        .upsert([game], { onConflict: "espn_id" });
+        .upsert(batch, { onConflict: "espn_id" });
 
-      if (upsertError) {
-        console.error(`Upsert error for ${game.espn_id}:`, upsertError.message);
-        upsertErrors++;
+      if (error) {
+        console.error(`Batch ${i / BATCH_SIZE + 1} error:`, error.message);
+        // Try one-by-one for failed batch
+        for (const game of batch) {
+          const { error: singleErr } = await supabase
+            .from("games")
+            .upsert([game], { onConflict: "espn_id" });
+          if (!singleErr) successCount++;
+          else console.error(`Single upsert fail ${game.espn_id}:`, singleErr.message);
+        }
+      } else {
+        successCount += batch.length;
       }
     }
-    
-    if (upsertErrors > 0) {
-      console.warn(`${upsertErrors} upsert errors out of ${games.length} games`);
-    }
+
+    console.log(`Upserted ${successCount}/${games.length} games`);
 
     // Return all games from DB
     const { data: allGames, error: fetchError } = await supabase
@@ -146,7 +133,7 @@ Deno.serve(async (req) => {
     if (fetchError) throw new Error(`Fetch error: ${fetchError.message}`);
 
     return new Response(
-      JSON.stringify({ success: true, count: games.length, games: allGames }),
+      JSON.stringify({ success: true, count: successCount, games: allGames }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
