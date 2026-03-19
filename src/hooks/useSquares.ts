@@ -72,10 +72,12 @@ export function useSquares() {
     return () => { supabase.removeChannel(channel); };
   }, [queryClient]);
 
-  // Auto-refresh scores every 60 seconds
+  // Auto-refresh scores every 5 minutes (avoid overwhelming the database)
   useEffect(() => {
     fetchScores.mutate();
-    const interval = setInterval(() => fetchScores.mutate(), 60000);
+    const interval = setInterval(() => {
+      if (!fetchScores.isPending) fetchScores.mutate();
+    }, 300000);
     return () => clearInterval(interval);
   }, []);
 
