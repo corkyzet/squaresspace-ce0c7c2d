@@ -129,8 +129,8 @@ function BracketGame({ game, findOwner }: { game: Game; findOwner: (w: number, l
       )}
       {isFinal && isChampGame && (
         <div className="flex items-center gap-1 mt-0.5">
-          <Trophy className="w-2.5 h-2.5 text-secondary" />
-          <span className="text-[9px] text-secondary font-medium truncate">
+          <Trophy className="w-2.5 h-2.5 text-[hsl(200,90%,60%)]" />
+          <span className="text-[9px] text-[hsl(200,90%,60%)] font-medium truncate">
             {reverseOwner || "Unclaimed"} ($500 reverse)
           </span>
         </div>
