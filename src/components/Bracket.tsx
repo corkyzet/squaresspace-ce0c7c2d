@@ -49,7 +49,7 @@ const ROUNDS: RoundConfig[] = [
     key: "champ",
     label: "Championship",
     prize: 1500,
-    matchFn: (r) => (r.includes("championship") || r.includes("national")) && !r.includes("region") && !r.includes("round"),
+    matchFn: (r) => r.includes("national championship") && !r.includes("final four") && !r.includes("semifinal"),
   },
 ];
 
