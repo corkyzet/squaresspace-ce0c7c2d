@@ -163,8 +163,12 @@ export function Bracket({ games, findOwner }: BracketProps) {
         <span>Tournament Results</span>
       </h2>
 
-      {gamesByRound.map((roundGroup) => {
-        if (roundGroup.games.length === 0 || roundGroup.key === "champ") return null;
+      {/* Regional rounds first, then Final Four & Championship at bottom */}
+      {gamesByRound
+        .filter((rg) => !["f4", "champ"].includes(rg.key))
+        .concat(gamesByRound.filter((rg) => ["f4", "champ"].includes(rg.key)))
+        .map((roundGroup) => {
+        if (roundGroup.games.length === 0) return null;
 
         const showRegions = ["r64", "r32", "s16", "e8"].includes(roundGroup.key);
 
