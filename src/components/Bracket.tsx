@@ -49,7 +49,7 @@ const ROUNDS: RoundConfig[] = [
     key: "champ",
     label: "Championship",
     prize: 1500,
-    matchFn: (r) => (r.includes("championship") || r.includes("national")) && !r.includes("region") && !r.includes("round"),
+    matchFn: (r) => r.includes("national championship") && !r.includes("final four") && !r.includes("semifinal"),
   },
 ];
 
@@ -82,6 +82,9 @@ function BracketGame({ game, findOwner }: { game: Game; findOwner: (w: number, l
   const winDigit = winScore !== null ? winScore % 10 : null;
   const loseDigit = loseScore !== null ? loseScore % 10 : null;
   const squareOwner = winDigit !== null && loseDigit !== null ? findOwner(winDigit, loseDigit) : null;
+
+  const isChampGame = classifyRound(game.round)?.key === "champ";
+  const reverseOwner = isChampGame && winDigit !== null && loseDigit !== null ? findOwner(loseDigit, winDigit) : null;
 
   const homeWon = isFinal && game.home_score > game.away_score;
 
@@ -120,7 +123,15 @@ function BracketGame({ game, findOwner }: { game: Game; findOwner: (w: number, l
         <div className="flex items-center gap-1 mt-0.5">
           <Trophy className="w-2.5 h-2.5 text-accent" />
           <span className="text-[9px] text-accent font-medium truncate">
-            {squareOwner || "Unclaimed"}
+            {squareOwner || "Unclaimed"}{isChampGame ? " ($1,500)" : ""}
+          </span>
+        </div>
+      )}
+      {isFinal && isChampGame && (
+        <div className="flex items-center gap-1 mt-0.5">
+          <Trophy className="w-2.5 h-2.5 text-secondary" />
+          <span className="text-[9px] text-secondary font-medium truncate">
+            {reverseOwner || "Unclaimed"} ($500 reverse)
           </span>
         </div>
       )}
