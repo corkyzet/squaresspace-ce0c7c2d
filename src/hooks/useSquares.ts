@@ -123,15 +123,27 @@ export function useSquares() {
     return 50;
   };
 
+  // Check if a game is the championship
+  const isChampionship = (round: string | null): boolean => {
+    if (!round) return false;
+    const r = round.toLowerCase();
+    return r.includes("national championship") || (r.includes("championship") && !r.includes("region") && !r.includes("round") && !r.includes("final four"));
+  };
+
   // Compute winning games (excluding First Four)
   const winningGames = games
     .filter((g) => g.status === "Final" && g.round?.toLowerCase() !== "first four");
 
-  const winningDigits = winningGames.map((g) => ({
-    w: Math.max(g.home_score, g.away_score) % 10,
-    l: Math.min(g.home_score, g.away_score) % 10,
-    prize: getRoundPrize(g.round),
-  }));
+  const winningDigits: { w: number; l: number; prize: number }[] = [];
+  winningGames.forEach((g) => {
+    const wDigit = Math.max(g.home_score, g.away_score) % 10;
+    const lDigit = Math.min(g.home_score, g.away_score) % 10;
+    winningDigits.push({ w: wDigit, l: lDigit, prize: getRoundPrize(g.round) });
+    // Championship reverse score bonus: $500 for the flipped digits
+    if (isChampionship(g.round)) {
+      winningDigits.push({ w: lDigit, l: wDigit, prize: 500 });
+    }
+  });
 
   const getWinCount = (winDigit: number, loseDigit: number) =>
     winningDigits.filter((d) => d.w === winDigit && d.l === loseDigit).length;
