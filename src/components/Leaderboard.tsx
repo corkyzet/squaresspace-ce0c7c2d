@@ -1,3 +1,4 @@
+import React from "react";
 import { Trophy } from "lucide-react";
 
 interface LeaderboardProps {
@@ -6,7 +7,7 @@ interface LeaderboardProps {
   highlightOwners: string[];
 }
 
-export function Leaderboard({ leaderboard, onSelectPlayer, highlightOwners }: LeaderboardProps) {
+export const Leaderboard = React.memo(function Leaderboard({ leaderboard, onSelectPlayer, highlightOwners }: LeaderboardProps) {
   return (
     <div className="w-full md:w-56 border-t md:border-t-0 md:border-l border-foreground/10 bg-background/50 p-3">
       <h2 className="font-mono-display text-xs uppercase tracking-widest text-primary mb-3 flex items-center gap-2">
@@ -56,4 +57,4 @@ export function Leaderboard({ leaderboard, onSelectPlayer, highlightOwners }: Le
       </div>
     </div>
   );
-}
+});

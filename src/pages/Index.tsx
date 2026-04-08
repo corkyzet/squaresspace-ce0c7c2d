@@ -1,42 +1,29 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { useSquares } from "@/hooks/useSquares";
+import { useAuth } from "@/contexts/AuthContext";
 import { GameTicker } from "@/components/GameTicker";
 import { SquaresGrid } from "@/components/SquaresGrid";
 import { Bracket } from "@/components/Bracket";
 import { Leaderboard } from "@/components/Leaderboard";
-import { AdminModal } from "@/components/AdminModal";
 import { PlayerFilter } from "@/components/PlayerFilter";
-import { Shield, ShieldOff } from "lucide-react";
-import { toast } from "sonner";
+import { Shield, LogOut } from "lucide-react";
 
 const Index = () => {
-  const { games, squares, findOwner, getWinCount, leaderboard, updateSquare, fetchScores, squaresLoading } = useSquares();
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { user, logout } = useAuth();
+  const { games, squares, findOwner, getWinCount, leaderboard, fetchScores, squaresLoading, winOrder, loseOrder } = useSquares();
   const [highlightOwners, setHighlightOwners] = useState<string[]>([]);
-  const [editCell, setEditCell] = useState<{ w: number; l: number } | null>(null);
 
   const allPlayers = useMemo(() => {
     const names = new Set(squares.filter((s) => s.owner_name).map((s) => s.owner_name!));
     return Array.from(names).sort((a, b) => a.localeCompare(b));
   }, [squares]);
 
-  const handleCellClick = (w: number, l: number) => {
-    if (!isAdmin) return;
-    setEditCell({ w, l });
-  };
+  const handleRefresh = useCallback(() => {
+    fetchScores.mutate();
+  }, [fetchScores]);
 
-  const handleSave = (name: string) => {
-    if (!editCell) return;
-    updateSquare.mutate(
-      { win_digit: editCell.w, lose_digit: editCell.l, owner_name: name },
-      {
-        onSuccess: () => toast.success(`Assigned "${name}" to [${editCell.w}, ${editCell.l}]`),
-        onError: () => toast.error("Failed to save"),
-      }
-    );
-  };
-
-  const handleLeaderboardSelect = (name: string | null) => {
+  const handleLeaderboardSelect = useCallback((name: string | null) => {
     if (!name) {
       setHighlightOwners([]);
     } else {
@@ -44,7 +31,7 @@ const Index = () => {
         prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]
       );
     }
-  };
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -53,23 +40,31 @@ const Index = () => {
         <h1 className="font-mono-display text-lg font-bold text-foreground tracking-tight">
           MARCH MADNESS <span className="text-primary">SQUARES 2026</span>
         </h1>
-        <button
-          onClick={() => setIsAdmin(!isAdmin)}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-sm text-xs font-mono-display uppercase tracking-wider transition-all ${
-            isAdmin
-              ? "bg-primary/20 text-primary ring-1 ring-primary/40"
-              : "bg-foreground/5 text-muted-foreground hover:bg-foreground/10"
-          }`}
-        >
-          {isAdmin ? <ShieldOff className="w-3 h-3" /> : <Shield className="w-3 h-3" />}
-          {isAdmin ? "Exit Admin" : "Admin"}
-        </button>
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-mono-display text-muted-foreground hidden sm:inline">
+            {user?.name}
+          </span>
+          {user?.isAdmin && (
+            <Link
+              to="/admin"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-xs font-mono-display uppercase tracking-wider bg-primary/20 text-primary ring-1 ring-primary/40 hover:bg-primary/30 transition-all"
+            >
+              <Shield className="w-3 h-3" /> Admin
+            </Link>
+          )}
+          <button
+            onClick={logout}
+            className="flex items-center gap-1 px-2 py-1.5 rounded-sm text-xs font-mono-display text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-all"
+          >
+            <LogOut className="w-3 h-3" />
+          </button>
+        </div>
       </header>
 
       {/* Ticker */}
       <GameTicker
         games={games}
-        onRefresh={() => fetchScores.mutate()}
+        onRefresh={handleRefresh}
         isRefreshing={fetchScores.isPending}
       />
 
@@ -92,9 +87,9 @@ const Index = () => {
               <SquaresGrid
                 findOwner={findOwner}
                 getWinCount={getWinCount}
-                isAdmin={isAdmin}
-                onCellClick={handleCellClick}
                 highlightOwners={highlightOwners}
+                winOrder={winOrder}
+                loseOrder={loseOrder}
               />
               <div className="border-t border-foreground/10 mt-4">
                 <Bracket games={games} findOwner={findOwner} />
@@ -109,17 +104,6 @@ const Index = () => {
           highlightOwners={highlightOwners}
         />
       </div>
-
-      {editCell && (
-        <AdminModal
-          open={!!editCell}
-          onClose={() => setEditCell(null)}
-          winDigit={editCell.w}
-          loseDigit={editCell.l}
-          currentOwner={findOwner(editCell.w, editCell.l)}
-          onSave={handleSave}
-        />
-      )}
     </div>
   );
 };

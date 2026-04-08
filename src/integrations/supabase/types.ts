@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_emails: {
+        Row: {
+          id: string
+          email: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          email: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          email?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      entrants: {
+        Row: {
+          id: string
+          season_id: string
+          name: string
+          email: string
+          boxes_requested: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          season_id: string
+          name: string
+          email: string
+          boxes_requested?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          season_id?: string
+          name?: string
+          email?: string
+          boxes_requested?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entrants_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       games: {
         Row: {
           away_score: number
@@ -65,12 +118,88 @@ export type Database = {
         }
         Relationships: []
       }
+      payments: {
+        Row: {
+          id: string
+          season_id: string
+          entrant_id: string
+          amount_cents: number
+          status: string
+          notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          season_id: string
+          entrant_id: string
+          amount_cents?: number
+          status?: string
+          notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          season_id?: string
+          entrant_id?: string
+          amount_cents?: number
+          status?: string
+          notes?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_entrant_id_fkey"
+            columns: ["entrant_id"]
+            isOneToOne: false
+            referencedRelation: "entrants"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      seasons: {
+        Row: {
+          id: string
+          year: number
+          is_active: boolean
+          is_published: boolean
+          win_order: number[]
+          lose_order: number[]
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          year: number
+          is_active?: boolean
+          is_published?: boolean
+          win_order?: number[]
+          lose_order?: number[]
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          year?: number
+          is_active?: boolean
+          is_published?: boolean
+          win_order?: number[]
+          lose_order?: number[]
+          created_at?: string
+        }
+        Relationships: []
+      }
       squares: {
         Row: {
           created_at: string
           id: string
           lose_digit: number
           owner_name: string | null
+          season_id: string
           win_digit: number
         }
         Insert: {
@@ -78,6 +207,7 @@ export type Database = {
           id?: string
           lose_digit: number
           owner_name?: string | null
+          season_id: string
           win_digit: number
         }
         Update: {
@@ -85,9 +215,18 @@ export type Database = {
           id?: string
           lose_digit?: number
           owner_name?: string | null
+          season_id?: string
           win_digit?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "squares_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          }
+        ]
       }
     }
     Views: {

@@ -1,5 +1,5 @@
+import React from "react";
 import { type Game } from "@/hooks/useSquares";
-import { type Square } from "@/hooks/useSquares";
 import { Trophy } from "lucide-react";
 
 interface BracketProps {
@@ -139,7 +139,7 @@ function BracketGame({ game, findOwner }: { game: Game; findOwner: (w: number, l
   );
 }
 
-export function Bracket({ games, findOwner }: BracketProps) {
+export const Bracket = React.memo(function Bracket({ games, findOwner }: BracketProps) {
   // Filter out First Four
   const tourneyGames = games.filter((g) => {
     const rc = classifyRound(g.round);
@@ -244,4 +244,4 @@ export function Bracket({ games, findOwner }: BracketProps) {
       )}
     </div>
   );
-}
+});

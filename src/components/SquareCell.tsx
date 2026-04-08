@@ -1,3 +1,4 @@
+import React from "react";
 import { motion } from "framer-motion";
 
 interface SquareCellProps {
@@ -10,7 +11,7 @@ interface SquareCellProps {
   highlightOwners: string[];
 }
 
-export function SquareCell({ winDigit, loseDigit, owner, winCount, isAdmin, onCellClick, highlightOwners }: SquareCellProps) {
+export const SquareCell = React.memo(function SquareCell({ winDigit, loseDigit, owner, winCount, isAdmin, onCellClick, highlightOwners }: SquareCellProps) {
   const isWinner = winCount > 0;
   const isEmpty = !owner;
   const hasFilter = highlightOwners.length > 0;
@@ -63,4 +64,4 @@ export function SquareCell({ winDigit, loseDigit, owner, winCount, isAdmin, onCe
       )}
     </motion.button>
   );
-}
+});

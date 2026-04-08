@@ -1,3 +1,4 @@
+import React from "react";
 import { type Game } from "@/hooks/useSquares";
 import { RefreshCw } from "lucide-react";
 
@@ -58,7 +59,7 @@ function formatGameDate(startTime: string | null): string {
   return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 }
 
-export function GameTicker({ games, onRefresh, isRefreshing }: GameTickerProps) {
+export const GameTicker = React.memo(function GameTicker({ games, onRefresh, isRefreshing }: GameTickerProps) {
   const mainGames = games.filter((g) =>
     g.round?.toLowerCase() !== "first four" &&
     g.home_team !== "TBD" && g.away_team !== "TBD"
@@ -158,4 +159,4 @@ export function GameTicker({ games, onRefresh, isRefreshing }: GameTickerProps) 
       </div>
     </div>
   );
-}
+});
