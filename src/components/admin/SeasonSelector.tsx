@@ -92,10 +92,10 @@ export function SeasonSelector({ activeSeasonId, onSelectSeason }: SeasonSelecto
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="font-mono-display text-sm uppercase tracking-wider text-foreground flex items-center gap-2">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
           <CalendarDays className="w-4 h-4" /> Seasons
         </h3>
-        <Button size="sm" variant="outline" onClick={() => setShowCreate(!showCreate)} className="gap-1 text-xs">
+        <Button size="sm" variant="outline" onClick={() => setShowCreate(!showCreate)} className="gap-1 text-xs rounded-lg">
           <Plus className="w-3 h-3" /> New Season
         </Button>
       </div>
@@ -103,10 +103,10 @@ export function SeasonSelector({ activeSeasonId, onSelectSeason }: SeasonSelecto
       {showCreate && (
         <form
           onSubmit={(e) => { e.preventDefault(); createSeason.mutate(); }}
-          className="flex gap-2 items-end p-3 rounded-sm bg-foreground/5 ring-1 ring-foreground/10"
+          className="flex gap-2 items-end p-3 rounded-lg bg-white/[0.03] border border-[hsl(215_30%_16%)]"
         >
           <div>
-            <label className="text-[10px] font-mono-display text-muted-foreground mb-1 block">Year</label>
+            <label className="text-[10px] font-medium text-muted-foreground mb-1 block">Year</label>
             <Input
               type="number"
               value={newYear}
@@ -126,20 +126,20 @@ export function SeasonSelector({ activeSeasonId, onSelectSeason }: SeasonSelecto
         {seasons.map((s) => (
           <div
             key={s.id}
-            className={`flex items-center justify-between px-3 py-2 rounded-sm cursor-pointer transition-all ${
+            className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all ${
               activeSeasonId === s.id
                 ? "bg-primary/10 ring-1 ring-primary/30"
-                : "hover:bg-foreground/5"
+                : "hover:bg-white/5"
             }`}
             onClick={() => onSelectSeason(s.id)}
           >
             <div className="flex items-center gap-2">
-              <span className="font-mono-display text-sm font-semibold text-foreground">{s.year}</span>
+              <span className="text-sm font-bold text-foreground">{s.year}</span>
               {s.is_active && (
-                <span className="text-[9px] font-mono-display bg-primary/20 text-primary px-1.5 py-0.5 rounded-sm">ACTIVE</span>
+                <span className="text-[9px] font-bold bg-primary/15 text-primary px-1.5 py-0.5 rounded-md">ACTIVE</span>
               )}
               {s.is_published && (
-                <span className="text-[9px] font-mono-display bg-accent/20 text-accent px-1.5 py-0.5 rounded-sm">PUBLISHED</span>
+                <span className="text-[9px] font-bold bg-accent/15 text-accent px-1.5 py-0.5 rounded-md">PUBLISHED</span>
               )}
             </div>
             <div className="flex items-center gap-2">

@@ -116,12 +116,12 @@ export function EntrantsList({ seasonId }: EntrantsListProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h3 className="font-mono-display text-sm uppercase tracking-wider text-foreground">Entrants</h3>
-          <span className="text-xs font-mono-display text-muted-foreground">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">Entrants</h3>
+          <span className="text-xs font-medium text-muted-foreground">
             {entrants.length} people &middot; {totalBoxes}/100 boxes
           </span>
         </div>
-        <Button size="sm" variant="outline" onClick={() => setShowAdd(!showAdd)} className="gap-1 text-xs">
+        <Button size="sm" variant="outline" onClick={() => setShowAdd(!showAdd)} className="gap-1 text-xs rounded-lg">
           <Plus className="w-3 h-3" /> Add
         </Button>
       </div>
@@ -129,18 +129,18 @@ export function EntrantsList({ seasonId }: EntrantsListProps) {
       {showAdd && (
         <form
           onSubmit={(e) => { e.preventDefault(); addEntrant.mutate(); }}
-          className="flex flex-wrap gap-2 items-end p-3 rounded-sm bg-foreground/5 ring-1 ring-foreground/10"
+          className="flex flex-wrap gap-2 items-end p-3 rounded-lg bg-white/[0.03] border border-[hsl(215_30%_16%)]"
         >
           <div className="flex-1 min-w-[140px]">
-            <label className="text-[10px] font-mono-display text-muted-foreground mb-1 block">Name</label>
-            <Input value={addName} onChange={(e) => setAddName(e.target.value)} className="h-8 text-xs" required />
+            <label className="text-[10px] font-medium text-muted-foreground mb-1 block">Name</label>
+            <Input value={addName} onChange={(e) => setAddName(e.target.value)} className="h-8 text-xs rounded-lg" required />
           </div>
           <div className="flex-1 min-w-[180px]">
-            <label className="text-[10px] font-mono-display text-muted-foreground mb-1 block">Email</label>
-            <Input type="email" value={addEmail} onChange={(e) => setAddEmail(e.target.value)} className="h-8 text-xs" required />
+            <label className="text-[10px] font-medium text-muted-foreground mb-1 block">Email</label>
+            <Input type="email" value={addEmail} onChange={(e) => setAddEmail(e.target.value)} className="h-8 text-xs rounded-lg" required />
           </div>
           <div className="w-24">
-            <label className="text-[10px] font-mono-display text-muted-foreground mb-1 block">Boxes</label>
+            <label className="text-[10px] font-medium text-muted-foreground mb-1 block">Boxes</label>
             <Select value={addBoxes} onValueChange={setAddBoxes}>
               <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -155,14 +155,14 @@ export function EntrantsList({ seasonId }: EntrantsListProps) {
         </form>
       )}
 
-      <div className="border border-foreground/10 rounded-sm overflow-hidden">
+      <div className="border border-[hsl(215_30%_16%)] rounded-lg overflow-hidden">
         <table className="w-full text-xs">
           <thead>
-            <tr className="bg-foreground/5 text-left">
-              <th className="px-3 py-2 font-mono-display text-[10px] uppercase tracking-wider text-muted-foreground">Name</th>
-              <th className="px-3 py-2 font-mono-display text-[10px] uppercase tracking-wider text-muted-foreground">Email</th>
-              <th className="px-3 py-2 font-mono-display text-[10px] uppercase tracking-wider text-muted-foreground text-center">Boxes</th>
-              <th className="px-3 py-2 font-mono-display text-[10px] uppercase tracking-wider text-muted-foreground text-right">Actions</th>
+            <tr className="bg-white/[0.03] text-left">
+              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Name</th>
+              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Email</th>
+              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground text-center">Boxes</th>
+              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -170,7 +170,7 @@ export function EntrantsList({ seasonId }: EntrantsListProps) {
               <tr><td colSpan={4} className="px-3 py-4 text-center text-muted-foreground">No entrants yet.</td></tr>
             )}
             {entrants.map((e) => (
-              <tr key={e.id} className="border-t border-foreground/5 hover:bg-foreground/5 transition-colors">
+              <tr key={e.id} className="border-t border-[hsl(215_30%_14%)] hover:bg-white/[0.03] transition-colors">
                 {editingId === e.id ? (
                   <>
                     <td className="px-2 py-1"><Input value={editName} onChange={(ev) => setEditName(ev.target.value)} className="h-7 text-xs" /></td>

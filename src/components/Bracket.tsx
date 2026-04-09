@@ -95,7 +95,7 @@ function BracketGame({ game, findOwner }: { game: Game; findOwner: (w: number, l
   const seed2 = homeWon ? game.away_seed : game.home_seed;
 
   return (
-    <div className="ring-1 ring-inset ring-foreground/10 rounded-sm bg-foreground/5 overflow-hidden text-[11px] w-full px-2 py-1.5">
+    <div className="border border-[hsl(215_30%_16%)] rounded-lg bg-white/[0.03] overflow-hidden text-[11px] w-full px-2 py-1.5">
       <div className="flex items-center gap-1 flex-wrap">
         <span className="font-medium text-foreground">{team1}</span>
         {seed1 && <span className="font-mono-display text-[9px] text-muted-foreground">({seed1})</span>}
@@ -170,7 +170,7 @@ export const Bracket = React.memo(function Bracket({ games, findOwner }: Bracket
 
   return (
     <div className="p-4 space-y-6">
-      <h2 className="font-mono-display text-sm uppercase tracking-widest text-primary flex items-center gap-2">
+      <h2 className="text-sm font-bold uppercase tracking-widest text-primary flex items-center gap-2">
         <span>Tournament Results</span>
       </h2>
 
@@ -186,10 +186,10 @@ export const Bracket = React.memo(function Bracket({ games, findOwner }: Bracket
         return (
           <div key={roundGroup.key}>
             <div className="flex items-center gap-2 mb-3">
-              <h3 className="font-mono-display text-xs uppercase tracking-wider text-foreground">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
                 {roundGroup.label}
               </h3>
-              <span className="text-[10px] font-mono-display text-accent">${roundGroup.prize}/game</span>
+              <span className="text-[10px] font-mono-display text-accent font-bold">${roundGroup.prize}/game</span>
               <span className="text-[10px] text-muted-foreground">
                 ({roundGroup.games.length} {roundGroup.games.length === 1 ? "game" : "games"})
               </span>
@@ -202,7 +202,7 @@ export const Bracket = React.memo(function Bracket({ games, findOwner }: Bracket
                   if (regionGames.length === 0) return null;
                   return (
                     <div key={region}>
-                      <span className="text-[10px] font-mono-display uppercase tracking-widest text-secondary mb-2 block">
+                      <span className="text-[10px] font-semibold uppercase tracking-widest text-primary/60 mb-2 block">
                         {region}
                       </span>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">

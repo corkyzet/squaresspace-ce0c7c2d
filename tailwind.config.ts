@@ -15,7 +15,7 @@ export default {
     extend: {
       fontFamily: {
         mono: ['"Geist Mono"', '"SF Mono"', '"Fira Code"', 'monospace'],
-        sans: ['"Geist Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['"Inter"', 'system-ui', '-apple-system', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",

@@ -30,23 +30,23 @@ export const SquareCell = React.memo(function SquareCell({ winDigit, loseDigit, 
       whileTap={{ scale: 0.98 }}
       onClick={() => isAdmin && onCellClick(winDigit, loseDigit)}
       className={`
-        aspect-square flex flex-col items-center justify-center rounded-sm
-        ring-1 ring-inset transition-all duration-200 relative overflow-hidden p-0.5
+        aspect-square flex flex-col items-center justify-center rounded-md
+        border transition-all duration-200 relative overflow-hidden p-0.5
         ${isHighlighted
-          ? "bg-accent/25 ring-2 ring-accent shadow-[0_0_8px_hsl(var(--accent)/0.4)] scale-105 z-10"
+          ? "bg-primary/20 border-primary shadow-[0_0_10px_hsl(var(--primary)/0.3)] scale-105 z-10"
           : isWinner
-          ? "bg-primary/20 ring-primary/50 winner-glow"
+          ? "bg-accent/15 border-accent/40 winner-glow"
           : isEmpty
-          ? "bg-foreground/5 ring-foreground/10 hover:bg-foreground/10"
-          : "bg-foreground/5 ring-foreground/10"
+          ? "bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.06]"
+          : "bg-white/[0.03] border-white/[0.06]"
         }
-        ${isDimmed ? "opacity-25" : ""}
+        ${isDimmed ? "opacity-20" : ""}
         ${isAdmin && isEmpty ? "cursor-pointer border-dashed" : isAdmin ? "cursor-pointer" : "cursor-default"}
       `}
     >
       {owner && (
         <span className={`text-[5px] sm:text-[10px] leading-[1.1] text-center w-full overflow-hidden flex flex-wrap justify-center gap-x-[2px] sm:gap-x-[3px] ${
-          isHighlighted ? "text-accent font-semibold" : "text-foreground/80"
+          isHighlighted ? "text-primary font-semibold" : "text-foreground/80"
         }`}>
           {owner.split(' ').map((word, i) => (
             <span key={i} className="whitespace-nowrap">
@@ -57,7 +57,7 @@ export const SquareCell = React.memo(function SquareCell({ winDigit, loseDigit, 
       )}
       {isWinner && (
         <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 text-[6px] sm:text-[8px] font-mono-display font-bold ${
-          isHighlighted ? "text-accent" : "text-primary"
+          isHighlighted ? "text-primary" : "text-accent"
         }`}>
           🏆{winCount}
         </span>

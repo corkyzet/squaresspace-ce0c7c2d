@@ -40,28 +40,28 @@ export default function Admin() {
   const viewingSeason = seasons.find((s) => s.id === viewingSeasonId);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col fd-gradient">
       {/* Header */}
-      <header className="border-b border-foreground/10 px-4 py-3 flex items-center justify-between">
+      <header className="border-b border-[hsl(215_30%_16%)] px-4 py-3 flex items-center justify-between bg-[hsl(220_35%_5%/0.8)] backdrop-blur-md">
         <div className="flex items-center gap-3">
           <Link
             to="/"
-            className="flex items-center gap-1 text-xs font-mono-display text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
           >
             <ArrowLeft className="w-3 h-3" /> Back
           </Link>
-          <h1 className="font-mono-display text-lg font-bold text-foreground tracking-tight">
+          <h1 className="text-lg font-extrabold text-foreground tracking-tight">
             ADMIN <span className="text-primary">DASHBOARD</span>
           </h1>
           {viewingSeason && (
-            <span className="text-xs font-mono-display text-muted-foreground">
+            <span className="text-xs font-medium text-muted-foreground">
               — {viewingSeason.year} season
             </span>
           )}
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs font-mono-display text-muted-foreground">{user?.email}</span>
-          <Button size="sm" variant="ghost" onClick={logout} className="gap-1 text-xs text-muted-foreground">
+          <span className="text-xs font-medium text-muted-foreground">{user?.email}</span>
+          <Button size="sm" variant="ghost" onClick={logout} className="gap-1 text-xs text-muted-foreground hover:text-primary">
             <LogOut className="w-3 h-3" /> Sign out
           </Button>
         </div>

@@ -13,28 +13,25 @@ export const SquaresGrid = React.memo(function SquaresGrid({ findOwner, getWinCo
   return (
     <div className="overflow-auto scrollbar-hide">
       <div className="min-w-[500px] p-4">
-        {/* Title row */}
         <div className="text-center mb-2">
-          <span className="font-mono-display text-xs text-primary uppercase tracking-widest">
+          <span className="text-xs font-bold text-primary uppercase tracking-widest">
             Winner Digit →
           </span>
         </div>
 
         <div className="grid grid-cols-11 gap-1">
-          {/* Top header: empty corner + win digits */}
           <div className="flex items-center justify-center">
             <span className="font-mono-display text-[10px] text-muted-foreground">↓L\W→</span>
           </div>
           {winOrder.map((digit) => (
-            <div key={`h-${digit}`} className="text-center font-mono-display text-xs text-primary py-2 font-semibold">
+            <div key={`h-${digit}`} className="text-center font-mono-display text-xs text-primary py-2 font-bold">
               {digit}
             </div>
           ))}
 
-          {/* Rows */}
           {loseOrder.map((row) => (
             <React.Fragment key={row}>
-              <div className="flex items-center justify-center font-mono-display text-xs text-secondary w-8 font-semibold">
+              <div className="flex items-center justify-center font-mono-display text-xs text-primary/70 w-8 font-bold">
                 {row}
               </div>
               {winOrder.map((col) => (
@@ -53,9 +50,8 @@ export const SquaresGrid = React.memo(function SquaresGrid({ findOwner, getWinCo
           ))}
         </div>
 
-        {/* Left label */}
         <div className="text-center mt-2">
-          <span className="font-mono-display text-xs text-secondary uppercase tracking-widest">
+          <span className="text-xs font-bold text-primary/70 uppercase tracking-widest">
             ← Loser Digit
           </span>
         </div>

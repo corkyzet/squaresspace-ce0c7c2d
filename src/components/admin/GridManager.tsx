@@ -182,12 +182,12 @@ export function GridManager({ seasonId }: GridManagerProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
-          <h3 className="font-mono-display text-sm uppercase tracking-wider text-foreground">Grid</h3>
-          <span className="text-xs font-mono-display text-muted-foreground">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">Grid</h3>
+          <span className="text-xs font-medium text-muted-foreground">
             {filledCount}/100 filled &middot; {totalBoxes} boxes requested
           </span>
           {season?.is_published && (
-            <span className="text-[9px] font-mono-display bg-primary/20 text-primary px-1.5 py-0.5 rounded-sm">PUBLISHED</span>
+            <span className="text-[9px] font-bold bg-accent/15 text-accent px-1.5 py-0.5 rounded-md">PUBLISHED</span>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -227,14 +227,13 @@ export function GridManager({ seasonId }: GridManagerProps) {
             </div>
             {/* Column headers */}
             {winOrder.map((d) => (
-              <div key={`h-${d}`} className="text-center font-mono-display text-[10px] text-primary py-1 font-semibold">
+              <div key={`h-${d}`} className="text-center font-mono-display text-[10px] text-primary py-1 font-bold">
                 {d}
               </div>
             ))}
-            {/* Rows */}
             {loseOrder.map((row) => (
               <>
-                <div key={`r-${row}`} className="flex items-center justify-center font-mono-display text-[10px] text-secondary font-semibold">
+                <div key={`r-${row}`} className="flex items-center justify-center font-mono-display text-[10px] text-primary/70 font-bold">
                   {row}
                 </div>
                 {winOrder.map((col) => {
@@ -242,10 +241,10 @@ export function GridManager({ seasonId }: GridManagerProps) {
                   return (
                     <div
                       key={`${col}-${row}`}
-                      className={`aspect-square flex items-center justify-center rounded-sm text-[6px] leading-tight text-center ring-1 ring-inset p-0.5 ${
+                      className={`aspect-square flex items-center justify-center rounded-md text-[6px] leading-tight text-center border p-0.5 ${
                         owner
-                          ? "bg-foreground/10 ring-foreground/20 text-foreground/80"
-                          : "bg-foreground/5 ring-foreground/5 text-muted-foreground/40"
+                          ? "bg-white/[0.06] border-white/[0.1] text-foreground/80"
+                          : "bg-white/[0.02] border-white/[0.04] text-muted-foreground/40"
                       }`}
                       title={owner ?? "Empty"}
                     >

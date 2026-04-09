@@ -34,27 +34,27 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col fd-gradient">
       {/* Header */}
-      <header className="border-b border-foreground/10 px-4 py-3 flex items-center justify-between">
-        <h1 className="font-mono-display text-lg font-bold text-foreground tracking-tight">
-          MARCH MADNESS <span className="text-primary">SQUARES 2026</span>
+      <header className="border-b border-[hsl(215_30%_16%)] px-4 py-3 flex items-center justify-between bg-[hsl(220_35%_5%/0.8)] backdrop-blur-md">
+        <h1 className="text-lg font-extrabold text-foreground tracking-tight">
+          MARCH MADNESS <span className="text-primary">SQUARES</span>
         </h1>
         <div className="flex items-center gap-3">
-          <span className="text-xs font-mono-display text-muted-foreground hidden sm:inline">
+          <span className="text-xs font-medium text-muted-foreground hidden sm:inline">
             {user?.name}
           </span>
           {user?.isAdmin && (
             <Link
               to="/admin"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-xs font-mono-display uppercase tracking-wider bg-primary/20 text-primary ring-1 ring-primary/40 hover:bg-primary/30 transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold uppercase tracking-wider fd-btn-primary text-white transition-all"
             >
               <Shield className="w-3 h-3" /> Admin
             </Link>
           )}
           <button
             onClick={logout}
-            className="flex items-center gap-1 px-2 py-1.5 rounded-sm text-xs font-mono-display text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-all"
+            className="flex items-center gap-1 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-white/5 transition-all"
           >
             <LogOut className="w-3 h-3" />
           </button>
@@ -80,7 +80,7 @@ const Index = () => {
         <div className="flex-1 p-2 sm:p-4">
           {squaresLoading ? (
             <div className="flex items-center justify-center h-64">
-              <span className="font-mono-display text-sm text-muted-foreground animate-pulse">Loading grid...</span>
+              <span className="text-sm text-muted-foreground animate-pulse font-medium">Loading grid...</span>
             </div>
           ) : (
             <>
@@ -91,7 +91,7 @@ const Index = () => {
                 winOrder={winOrder}
                 loseOrder={loseOrder}
               />
-              <div className="border-t border-foreground/10 mt-4">
+              <div className="border-t border-[hsl(215_30%_16%)] mt-4">
                 <Bracket games={games} findOwner={findOwner} />
               </div>
             </>

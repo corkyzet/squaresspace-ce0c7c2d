@@ -91,21 +91,21 @@ export const GameTicker = React.memo(function GameTicker({ games, onRefresh, isR
     : null;
 
   return (
-    <div className="w-full bg-background/80 backdrop-blur-md border-b border-foreground/10">
+    <div className="w-full bg-[hsl(220_35%_5%/0.9)] backdrop-blur-md border-b border-[hsl(215_30%_16%)]">
       <div className="flex items-center h-10 px-3 gap-2">
-        <div className="flex items-center gap-1.5 shrink-0 border-r border-foreground/10 pr-2">
+        <div className="flex items-center gap-1.5 shrink-0 border-r border-[hsl(215_30%_16%)] pr-2">
           <span className="font-mono-display text-[10px] uppercase tracking-widest text-muted-foreground">
             {upcomingDate ? upcomingDate : "Scores"}
           </span>
           <button
             onClick={onRefresh}
             disabled={isRefreshing}
-            className="p-0.5 rounded-sm hover:bg-foreground/10 transition-colors text-muted-foreground hover:text-foreground disabled:opacity-50"
+            className="p-0.5 rounded-md hover:bg-white/10 transition-colors text-muted-foreground hover:text-primary disabled:opacity-50"
           >
             <RefreshCw className={`w-3 h-3 ${isRefreshing ? "animate-spin" : ""}`} />
           </button>
           {liveGames.length > 0 && (
-            <span className="text-[9px] font-mono-display bg-destructive/20 text-destructive px-1 py-0.5 rounded-sm">
+            <span className="text-[9px] font-mono-display bg-destructive/20 text-destructive px-1.5 py-0.5 rounded-md font-bold">
               {liveGames.length} LIVE
             </span>
           )}
@@ -142,9 +142,9 @@ export const GameTicker = React.memo(function GameTicker({ games, onRefresh, isR
                   <span className="text-[10px] text-muted-foreground">{seedLabel(game.away_seed)}</span>
                 </div>
                 <span
-                  className={`text-[8px] font-mono-display uppercase tracking-wider px-1 py-0.5 rounded-sm ${
+                  className={`text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md ${
                     game.status === "Final"
-                      ? "bg-primary/20 text-primary"
+                      ? "bg-accent/15 text-accent"
                       : game.status === "Live"
                       ? "bg-destructive/20 text-destructive"
                       : "bg-muted text-muted-foreground"

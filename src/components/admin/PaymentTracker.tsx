@@ -51,22 +51,22 @@ export function PaymentTracker({ seasonId }: PaymentTrackerProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <h3 className="font-mono-display text-sm uppercase tracking-wider text-foreground flex items-center gap-2">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
           <DollarSign className="w-4 h-4" /> Payments
         </h3>
-        <span className="text-xs font-mono-display text-muted-foreground">
+        <span className="text-xs font-medium text-muted-foreground">
           {payments.length} records
         </span>
       </div>
 
-      <div className="border border-foreground/10 rounded-sm overflow-hidden">
+      <div className="border border-[hsl(215_30%_16%)] rounded-lg overflow-hidden">
         <table className="w-full text-xs">
           <thead>
-            <tr className="bg-foreground/5 text-left">
-              <th className="px-3 py-2 font-mono-display text-[10px] uppercase tracking-wider text-muted-foreground">Entrant</th>
-              <th className="px-3 py-2 font-mono-display text-[10px] uppercase tracking-wider text-muted-foreground text-right">Amount</th>
-              <th className="px-3 py-2 font-mono-display text-[10px] uppercase tracking-wider text-muted-foreground">Status</th>
-              <th className="px-3 py-2 font-mono-display text-[10px] uppercase tracking-wider text-muted-foreground">Notes</th>
+            <tr className="bg-white/[0.03] text-left">
+              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Entrant</th>
+              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground text-right">Amount</th>
+              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
+              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Notes</th>
             </tr>
           </thead>
           <tbody>
@@ -78,14 +78,14 @@ export function PaymentTracker({ seasonId }: PaymentTrackerProps) {
               </tr>
             )}
             {payments.map((p) => (
-              <tr key={p.id} className="border-t border-foreground/5 hover:bg-foreground/5 transition-colors">
+              <tr key={p.id} className="border-t border-[hsl(215_30%_14%)] hover:bg-white/[0.03] transition-colors">
                 <td className="px-3 py-2 text-foreground">{entrantName(p.entrant_id)}</td>
                 <td className="px-3 py-2 text-right font-mono-display">${(p.amount_cents / 100).toFixed(2)}</td>
                 <td className="px-3 py-2">
-                  <span className={`text-[9px] font-mono-display uppercase px-1.5 py-0.5 rounded-sm ${
-                    p.status === "paid" ? "bg-primary/20 text-primary" :
+                  <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md ${
+                    p.status === "paid" ? "bg-accent/15 text-accent" :
                     p.status === "refunded" ? "bg-destructive/20 text-destructive" :
-                    "bg-foreground/10 text-muted-foreground"
+                    "bg-white/[0.06] text-muted-foreground"
                   }`}>
                     {p.status}
                   </span>

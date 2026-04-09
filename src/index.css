@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,51 +6,53 @@
 
 @layer base {
   :root {
-    --background: 222 47% 7%;
+    /* FanDuel-inspired deep navy palette */
+    --background: 220 35% 6%;
     --foreground: 210 40% 98%;
 
-    --card: 222 40% 10%;
+    --card: 220 30% 9%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222 40% 10%;
+    --popover: 220 30% 9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 22 100% 56%;
+    /* FanDuel blue */
+    --primary: 207 100% 54%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 214 100% 31%;
+    /* Deeper blue for secondary */
+    --secondary: 215 60% 28%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 217 19% 27%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 220 20% 18%;
+    --muted-foreground: 215 15% 55%;
 
-    --accent: 45 100% 50%;
-    --accent-foreground: 222 47% 7%;
+    /* Green for wins & positive outcomes */
+    --accent: 152 100% 39%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 0 0% 100% / 0.08;
-    --input: 0 0% 100% / 0.08;
-    --ring: 22 100% 56%;
+    --border: 215 30% 18%;
+    --input: 215 30% 18%;
+    --ring: 207 100% 54%;
 
-    --radius: 0.5rem;
+    --radius: 0.625rem;
 
-    --sidebar-background: 222 47% 5%;
+    --sidebar-background: 220 35% 5%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 22 100% 56%;
+    --sidebar-primary: 207 100% 54%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 19% 15%;
+    --sidebar-accent: 220 20% 14%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 0 0% 100% / 0.08;
-    --sidebar-ring: 22 100% 56%;
+    --sidebar-border: 215 30% 18%;
+    --sidebar-ring: 207 100% 54%;
 
     /* Custom tokens */
-    --surface: 222 40% 10%;
-    --surface-hover: 0 0% 100% / 0.1;
-    --glow-primary: 0 0 20px rgba(255, 103, 31, 0.2), 0 0 40px rgba(255, 103, 31, 0.1);
-    --glow-winner: 0 0 20px rgba(255, 103, 31, 0.3), 0 0 40px rgba(255, 103, 31, 0.15);
-    --glow-accent: 0 0 12px rgba(255, 215, 0, 0.3);
+    --surface: 220 30% 9%;
+    --surface-hover: 220 25% 14%;
+    --gold: 45 100% 50%;
   }
 }
 
@@ -61,10 +63,9 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Geist Sans', system-ui, -apple-system, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 
-  /* Hide scrollbars */
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
@@ -77,15 +78,11 @@
 @layer utilities {
   .font-mono-display {
     font-family: 'Geist Mono', 'SF Mono', 'Fira Code', monospace;
-    letter-spacing: -0.05em;
-  }
-
-  .stadium-glow {
-    box-shadow: 0 0 20px rgba(255, 103, 31, 0.2), 0 0 40px rgba(255, 103, 31, 0.1);
+    letter-spacing: -0.03em;
   }
 
   .winner-glow {
-    box-shadow: inset 0 0 12px rgba(255, 103, 31, 0.3), 0 0 20px rgba(255, 103, 31, 0.2);
+    box-shadow: inset 0 0 12px rgba(0, 200, 83, 0.25), 0 0 16px rgba(0, 200, 83, 0.15);
   }
 
   .gold-glow {
@@ -94,5 +91,24 @@
 
   .surface-elevated {
     background: hsl(var(--surface));
+  }
+
+  .fd-gradient {
+    background: linear-gradient(135deg, hsl(220 35% 6%) 0%, hsl(220 40% 10%) 100%);
+  }
+
+  .fd-card {
+    background: hsl(220 30% 9%);
+    border: 1px solid hsl(215 30% 16%);
+    border-radius: 0.75rem;
+  }
+
+  .fd-btn-primary {
+    background: linear-gradient(180deg, hsl(207 100% 58%) 0%, hsl(207 100% 48%) 100%);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+  }
+
+  .fd-btn-primary:hover {
+    background: linear-gradient(180deg, hsl(207 100% 62%) 0%, hsl(207 100% 52%) 100%);
   }
 }

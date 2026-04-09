@@ -87,16 +87,19 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
-      <h1 className="font-mono-display text-2xl font-bold text-foreground tracking-tight mb-8">
-        MARCH MADNESS <span className="text-primary">SQUARES</span>
-      </h1>
+    <div className="min-h-screen flex flex-col items-center justify-center fd-gradient px-4">
+      <div className="mb-8 text-center">
+        <h1 className="text-3xl font-extrabold text-foreground tracking-tight">
+          MARCH MADNESS
+        </h1>
+        <p className="text-primary text-lg font-bold tracking-wide mt-1">SQUARES POOL</p>
+      </div>
 
       {!showSignup ? (
-        <Card className="w-full max-w-sm bg-card border-foreground/10">
+        <Card className="w-full max-w-sm fd-card">
           <CardHeader>
-            <CardTitle className="font-mono-display text-base flex items-center gap-2">
-              <LogIn className="w-4 h-4" /> Sign In
+            <CardTitle className="text-base font-bold flex items-center gap-2">
+              <LogIn className="w-4 h-4 text-primary" /> Sign In
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -106,21 +109,21 @@ export default function Login() {
                 placeholder="Enter your email..."
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="bg-background border-foreground/10 text-foreground"
+                className="bg-background/50 border-[hsl(215_30%_20%)] text-foreground rounded-lg"
                 autoFocus
                 required
               />
               {error && (
-                <p className="text-xs text-destructive font-mono-display">{error}</p>
+                <p className="text-xs text-destructive font-medium">{error}</p>
               )}
-              <Button type="submit" disabled={signingIn} className="w-full">
+              <Button type="submit" disabled={signingIn} className="w-full fd-btn-primary text-white font-semibold rounded-lg">
                 {signingIn ? "Checking..." : "Sign In"}
               </Button>
             </form>
             <div className="mt-4 text-center">
               <button
                 onClick={() => setShowSignup(true)}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors font-mono-display underline underline-offset-4"
+                className="text-xs text-muted-foreground hover:text-primary transition-colors underline underline-offset-4"
               >
                 New here? Sign up for the pool
               </button>
@@ -128,10 +131,10 @@ export default function Login() {
           </CardContent>
         </Card>
       ) : (
-        <Card className="w-full max-w-sm bg-card border-foreground/10">
+        <Card className="w-full max-w-sm fd-card">
           <CardHeader>
-            <CardTitle className="font-mono-display text-base flex items-center gap-2">
-              <UserPlus className="w-4 h-4" /> Sign Up
+            <CardTitle className="text-base font-bold flex items-center gap-2">
+              <UserPlus className="w-4 h-4 text-primary" /> Sign Up
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -140,7 +143,7 @@ export default function Login() {
                 placeholder="Your name"
                 value={signupName}
                 onChange={(e) => setSignupName(e.target.value)}
-                className="bg-background border-foreground/10 text-foreground"
+                className="bg-background/50 border-[hsl(215_30%_20%)] text-foreground rounded-lg"
                 autoFocus
                 required
               />
@@ -149,15 +152,15 @@ export default function Login() {
                 placeholder="Your email"
                 value={signupEmail}
                 onChange={(e) => setSignupEmail(e.target.value)}
-                className="bg-background border-foreground/10 text-foreground"
+                className="bg-background/50 border-[hsl(215_30%_20%)] text-foreground rounded-lg"
                 required
               />
               <div>
-                <label className="text-xs font-mono-display text-muted-foreground mb-1 block">
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">
                   How many boxes? (max 3)
                 </label>
                 <Select value={signupBoxes} onValueChange={setSignupBoxes}>
-                  <SelectTrigger className="bg-background border-foreground/10">
+                  <SelectTrigger className="bg-background/50 border-[hsl(215_30%_20%)] rounded-lg">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -167,14 +170,14 @@ export default function Login() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button type="submit" disabled={signingUp} className="w-full">
+              <Button type="submit" disabled={signingUp} className="w-full fd-btn-primary text-white font-semibold rounded-lg">
                 {signingUp ? "Signing up..." : "Sign Up"}
               </Button>
             </form>
             <div className="mt-4 text-center">
               <button
                 onClick={() => setShowSignup(false)}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors font-mono-display underline underline-offset-4"
+                className="text-xs text-muted-foreground hover:text-primary transition-colors underline underline-offset-4"
               >
                 Already registered? Sign in
               </button>

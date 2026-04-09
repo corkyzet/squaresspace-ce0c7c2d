@@ -42,10 +42,10 @@ export function PlayerFilter({ players, selected, onChange }: PlayerFilterProps)
   };
 
   return (
-    <div ref={ref} className="relative px-4 py-2 border-b border-foreground/10 bg-background/80">
+    <div ref={ref} className="relative px-4 py-2 border-b border-[hsl(215_30%_16%)] bg-[hsl(220_35%_5%/0.6)]">
       <div
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 w-full sm:w-auto px-3 py-1.5 rounded-sm text-xs font-mono-display bg-foreground/5 hover:bg-foreground/10 transition-all ring-1 ring-inset ring-foreground/10 cursor-text"
+        className="flex items-center gap-2 w-full sm:w-auto px-3 py-1.5 rounded-lg text-xs bg-white/[0.04] hover:bg-white/[0.07] transition-all border border-[hsl(215_30%_16%)] cursor-text"
       >
         <Users className="w-3 h-3 text-muted-foreground shrink-0" />
         <input
@@ -55,19 +55,18 @@ export function PlayerFilter({ players, selected, onChange }: PlayerFilterProps)
           onChange={(e) => { setSearch(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
           placeholder={selected.length === 0 ? "Filter by contestant..." : `${selected.length} selected — type to filter`}
-          className="bg-transparent outline-none text-foreground/80 placeholder:text-muted-foreground flex-1 min-w-0 uppercase tracking-wider"
+          className="bg-transparent outline-none text-foreground/80 placeholder:text-muted-foreground flex-1 min-w-0 text-xs"
         />
         <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform shrink-0 ${open ? "rotate-180" : ""}`} />
       </div>
 
-      {/* Selected chips */}
       {selected.length > 0 && (
         <div className="flex flex-wrap gap-1 mt-1.5">
           {selected.map((name) => (
             <button
               key={name}
               onClick={() => toggle(name)}
-              className="flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10px] font-mono-display bg-accent/15 text-accent ring-1 ring-accent/30 hover:bg-accent/25 transition-all"
+              className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25 transition-all"
             >
               {name}
               <X className="w-2.5 h-2.5" />
@@ -75,16 +74,15 @@ export function PlayerFilter({ players, selected, onChange }: PlayerFilterProps)
           ))}
           <button
             onClick={() => onChange([])}
-            className="px-2 py-0.5 rounded-sm text-[10px] font-mono-display text-muted-foreground hover:text-foreground transition-all"
+            className="px-2 py-0.5 rounded-md text-[10px] text-muted-foreground hover:text-foreground transition-all"
           >
             Clear all
           </button>
         </div>
       )}
 
-      {/* Dropdown */}
       {open && (
-        <div className="absolute z-50 left-4 top-full mt-1 w-56 max-h-60 overflow-auto rounded-sm bg-background ring-1 ring-foreground/10 shadow-lg">
+        <div className="absolute z-50 left-4 top-full mt-1 w-56 max-h-60 overflow-auto rounded-lg bg-[hsl(220_30%_9%)] border border-[hsl(215_30%_16%)] shadow-xl">
           {filtered.length === 0 && (
             <p className="px-3 py-2 text-xs text-muted-foreground">No players found</p>
           )}
@@ -92,14 +90,14 @@ export function PlayerFilter({ players, selected, onChange }: PlayerFilterProps)
             <button
               key={name}
               onClick={() => toggle(name)}
-              className={`w-full text-left px-3 py-1.5 text-xs hover:bg-foreground/5 transition-all flex items-center gap-2 ${
-                selected.includes(name) ? "bg-accent/10 text-accent" : "text-foreground/80"
+              className={`w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 transition-all flex items-center gap-2 ${
+                selected.includes(name) ? "bg-primary/10 text-primary" : "text-foreground/80"
               }`}
             >
-              <span className={`w-3 h-3 rounded-sm border flex items-center justify-center text-[8px] ${
+              <span className={`w-3 h-3 rounded flex items-center justify-center text-[8px] ${
                 selected.includes(name)
-                  ? "border-accent bg-accent text-background"
-                  : "border-foreground/20"
+                  ? "border-primary bg-primary text-white"
+                  : "border border-white/20"
               }`}>
                 {selected.includes(name) && "✓"}
               </span>
