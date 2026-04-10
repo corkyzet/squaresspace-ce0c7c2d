@@ -41,9 +41,6 @@ const Index = () => {
           MARCH MADNESS <span className="text-primary">SQUARES</span>
         </h1>
         <div className="flex items-center gap-3">
-          <span className="text-xs font-medium text-muted-foreground hidden sm:inline">
-            {user?.name}
-          </span>
           {user?.isAdmin && (
             <Link
               to="/admin"

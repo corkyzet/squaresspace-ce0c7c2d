@@ -39,6 +39,8 @@ export type Database = {
           name: string
           email: string
           boxes_requested: number
+          who_will_pay: string | null
+          collected_by: string | null
           created_at: string
         }
         Insert: {
@@ -47,6 +49,8 @@ export type Database = {
           name: string
           email: string
           boxes_requested?: number
+          who_will_pay?: string | null
+          collected_by?: string | null
           created_at?: string
         }
         Update: {
@@ -55,6 +59,8 @@ export type Database = {
           name?: string
           email?: string
           boxes_requested?: number
+          who_will_pay?: string | null
+          collected_by?: string | null
           created_at?: string
         }
         Relationships: [
