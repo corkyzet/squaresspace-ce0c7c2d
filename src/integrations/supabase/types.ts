@@ -132,6 +132,8 @@ export type Database = {
           amount_cents: number
           status: string
           notes: string | null
+          paid_from: string | null
+          round: string | null
           created_at: string
         }
         Insert: {
@@ -141,6 +143,8 @@ export type Database = {
           amount_cents?: number
           status?: string
           notes?: string | null
+          paid_from?: string | null
+          round?: string | null
           created_at?: string
         }
         Update: {
@@ -150,6 +154,8 @@ export type Database = {
           amount_cents?: number
           status?: string
           notes?: string | null
+          paid_from?: string | null
+          round?: string | null
           created_at?: string
         }
         Relationships: [

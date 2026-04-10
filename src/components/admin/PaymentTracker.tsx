@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { DollarSign, ArrowUpRight, ArrowDownLeft, Plus, Check, X, Trash2 } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft, Plus, Check, X, Trash2, Pencil } from "lucide-react";
 
 interface PaymentTrackerProps {
   seasonId: string;
@@ -16,6 +16,8 @@ interface Payment {
   amount_cents: number;
   status: string;
   notes: string | null;
+  paid_from: string | null;
+  round: string | null;
   created_at: string;
   entrant_id: string;
 }
@@ -33,6 +35,16 @@ const COLLECTORS = [
   { value: "corey", label: "Corey" },
   { value: "joe", label: "Joe" },
   { value: "coop", label: "Coop" },
+];
+
+const ROUNDS = [
+  { value: "R1", label: "R1" },
+  { value: "R2", label: "R2" },
+  { value: "SS", label: "SS" },
+  { value: "EE", label: "EE" },
+  { value: "FF", label: "FF" },
+  { value: "F", label: "F" },
+  { value: "Rev", label: "Rev" },
 ];
 
 const PRICE_PER_BOX_CENTS = 10000;
@@ -84,11 +96,15 @@ export function PaymentTracker({ seasonId }: PaymentTrackerProps) {
         seasonId={seasonId}
         queryClient={queryClient}
       />
+      <SummaryTable
+        payments={payments}
+        entrants={entrants}
+      />
     </div>
   );
 }
 
-/* ─── Outgoing Payments (prize money to winners) ─── */
+/* ─── Outgoing Payments ─── */
 
 function OutgoingPayments({
   payments,
@@ -106,23 +122,34 @@ function OutgoingPayments({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editStatus, setEditStatus] = useState("");
   const [editNotes, setEditNotes] = useState("");
+  const [editPaidFrom, setEditPaidFrom] = useState("");
+  const [editRound, setEditRound] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [addEntrantId, setAddEntrantId] = useState("");
   const [addAmount, setAddAmount] = useState("");
   const [addStatus, setAddStatus] = useState("unpaid");
   const [addNotes, setAddNotes] = useState("");
+  const [addPaidFrom, setAddPaidFrom] = useState("");
+  const [addRound, setAddRound] = useState("");
 
   function startEdit(p: Payment) {
     setEditingId(p.id);
     setEditStatus(p.status);
     setEditNotes(p.notes ?? "");
+    setEditPaidFrom(p.paid_from ?? "none");
+    setEditRound(p.round ?? "none");
   }
 
   const updatePayment = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from("payments")
-        .update({ status: editStatus, notes: editNotes || null })
+        .update({
+          status: editStatus,
+          notes: editNotes || null,
+          paid_from: editPaidFrom === "none" ? null : editPaidFrom,
+          round: editRound === "none" ? null : editRound,
+        })
         .eq("id", id);
       if (error) throw error;
     },
@@ -144,16 +171,16 @@ function OutgoingPayments({
         amount_cents: cents,
         status: addStatus,
         notes: addNotes || null,
+        paid_from: addPaidFrom || null,
+        round: addRound || null,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payments", seasonId] });
       setShowAdd(false);
-      setAddEntrantId("");
-      setAddAmount("");
-      setAddStatus("unpaid");
-      setAddNotes("");
+      setAddEntrantId(""); setAddAmount(""); setAddStatus("unpaid");
+      setAddNotes(""); setAddPaidFrom(""); setAddRound("");
       toast.success("Outgoing payment added.");
     },
     onError: (err: Error) => toast.error(err.message),
@@ -170,6 +197,9 @@ function OutgoingPayments({
     },
     onError: (err: Error) => toast.error(err.message),
   });
+
+  const collectorLabel = (val: string | null) =>
+    COLLECTORS.find((c) => c.value === val)?.label ?? "—";
 
   return (
     <div className="space-y-4">
@@ -204,7 +234,29 @@ function OutgoingPayments({
             <label className="text-[10px] font-medium text-muted-foreground mb-1 block">Amount ($)</label>
             <Input type="number" step="0.01" value={addAmount} onChange={(e) => setAddAmount(e.target.value)} className="h-8 text-xs rounded-lg" required />
           </div>
+          <div className="w-24">
+            <label className="text-[10px] font-medium text-muted-foreground mb-1 block">Round</label>
+            <Select value={addRound} onValueChange={setAddRound}>
+              <SelectTrigger className="h-8 text-xs rounded-lg"><SelectValue placeholder="—" /></SelectTrigger>
+              <SelectContent>
+                {ROUNDS.map((r) => (
+                  <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="w-28">
+            <label className="text-[10px] font-medium text-muted-foreground mb-1 block">Paid From</label>
+            <Select value={addPaidFrom} onValueChange={setAddPaidFrom}>
+              <SelectTrigger className="h-8 text-xs rounded-lg"><SelectValue placeholder="—" /></SelectTrigger>
+              <SelectContent>
+                {COLLECTORS.map((c) => (
+                  <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="w-24">
             <label className="text-[10px] font-medium text-muted-foreground mb-1 block">Status</label>
             <Select value={addStatus} onValueChange={setAddStatus}>
               <SelectTrigger className="h-8 text-xs rounded-lg"><SelectValue /></SelectTrigger>
@@ -214,7 +266,7 @@ function OutgoingPayments({
               </SelectContent>
             </Select>
           </div>
-          <div className="flex-1 min-w-[120px]">
+          <div className="flex-1 min-w-[100px]">
             <label className="text-[10px] font-medium text-muted-foreground mb-1 block">Notes</label>
             <Input value={addNotes} onChange={(e) => setAddNotes(e.target.value)} className="h-8 text-xs rounded-lg" placeholder="Optional" />
           </div>
@@ -223,12 +275,14 @@ function OutgoingPayments({
         </div>
       )}
 
-      <div className="border border-[hsl(215_30%_16%)] rounded-lg overflow-hidden">
+      <div className="border border-[hsl(215_30%_16%)] rounded-lg overflow-hidden overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
             <tr className="bg-white/[0.03] text-left">
               <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Entrant</th>
               <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground text-right">Amount</th>
+              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Round</th>
+              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Paid From</th>
               <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
               <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Notes</th>
               <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground text-right">Actions</th>
@@ -237,7 +291,7 @@ function OutgoingPayments({
           <tbody>
             {payments.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-3 py-8 text-center text-muted-foreground">
+                <td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">
                   No outgoing payment records yet.
                 </td>
               </tr>
@@ -245,12 +299,34 @@ function OutgoingPayments({
             {payments.map((p) => (
               <tr key={p.id} className="border-t border-[hsl(215_30%_14%)] hover:bg-white/[0.03] transition-colors">
                 <td className="px-3 py-2 text-foreground">{entrantName(p.entrant_id)}</td>
-                <td className="px-3 py-2 text-right font-mono-display">${(p.amount_cents / 100).toFixed(2)}</td>
+                <td className="px-3 py-2 text-right font-mono-display">${(p.amount_cents / 100).toFixed(0)}</td>
                 {editingId === p.id ? (
                   <>
                     <td className="px-2 py-1">
-                      <Select value={editStatus} onValueChange={setEditStatus}>
+                      <Select value={editRound} onValueChange={setEditRound}>
+                        <SelectTrigger className="h-7 text-xs rounded-lg w-16"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">—</SelectItem>
+                          {ROUNDS.map((r) => (
+                            <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </td>
+                    <td className="px-2 py-1">
+                      <Select value={editPaidFrom} onValueChange={setEditPaidFrom}>
                         <SelectTrigger className="h-7 text-xs rounded-lg w-24"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">—</SelectItem>
+                          {COLLECTORS.map((c) => (
+                            <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </td>
+                    <td className="px-2 py-1">
+                      <Select value={editStatus} onValueChange={setEditStatus}>
+                        <SelectTrigger className="h-7 text-xs rounded-lg w-20"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="paid">Paid</SelectItem>
                           <SelectItem value="unpaid">Unpaid</SelectItem>
@@ -260,7 +336,7 @@ function OutgoingPayments({
                     <td className="px-2 py-1">
                       <Input value={editNotes} onChange={(e) => setEditNotes(e.target.value)} className="h-7 text-xs rounded-lg" />
                     </td>
-                    <td className="px-2 py-1 text-right space-x-1">
+                    <td className="px-2 py-1 text-right space-x-1 whitespace-nowrap">
                       <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => updatePayment.mutate(p.id)}><Check className="w-3 h-3" /></Button>
                       <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => setEditingId(null)}><X className="w-3 h-3" /></Button>
                     </td>
@@ -268,17 +344,22 @@ function OutgoingPayments({
                 ) : (
                   <>
                     <td className="px-3 py-2">
+                      {p.round ? (
+                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md bg-primary/10 text-primary">{p.round}</span>
+                      ) : "—"}
+                    </td>
+                    <td className="px-3 py-2 text-foreground/70">{collectorLabel(p.paid_from)}</td>
+                    <td className="px-3 py-2">
                       <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md ${
-                        p.status === "paid" ? "bg-accent/15 text-accent" :
-                        "bg-destructive/15 text-destructive"
+                        p.status === "paid" ? "bg-accent/15 text-accent" : "bg-destructive/15 text-destructive"
                       }`}>
                         {p.status}
                       </span>
                     </td>
                     <td className="px-3 py-2 text-foreground/70">{p.notes ?? "—"}</td>
-                    <td className="px-3 py-2 text-right space-x-1">
+                    <td className="px-3 py-2 text-right space-x-1 whitespace-nowrap">
                       <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground" onClick={() => startEdit(p)}>
-                        <DollarSign className="w-3 h-3" />
+                        <Pencil className="w-3 h-3" />
                       </Button>
                       <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive" onClick={() => deletePayment.mutate(p.id)}>
                         <Trash2 className="w-3 h-3" />
@@ -295,7 +376,7 @@ function OutgoingPayments({
   );
 }
 
-/* ─── Incoming Payments (entry fees from entrants) ─── */
+/* ─── Incoming Payments ─── */
 
 function IncomingPayments({
   entrants,
@@ -368,10 +449,7 @@ function IncomingPayments({
                   <Select
                     value={e.collected_by ?? "none"}
                     onValueChange={(val) =>
-                      updateCollector.mutate({
-                        entrantId: e.id,
-                        value: val === "none" ? null : val,
-                      })
+                      updateCollector.mutate({ entrantId: e.id, value: val === "none" ? null : val })
                     }
                   >
                     <SelectTrigger className="h-7 text-xs rounded-lg w-28">
@@ -384,6 +462,81 @@ function IncomingPayments({
                       ))}
                     </SelectContent>
                   </Select>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Summary Table ─── */
+
+function SummaryTable({
+  payments,
+  entrants,
+}: {
+  payments: Payment[];
+  entrants: Entrant[];
+}) {
+  const paidPayments = payments.filter((p) => p.status === "paid");
+
+  const rows = COLLECTORS.map((c) => {
+    const incomingCents = entrants
+      .filter((e) => e.collected_by === c.value)
+      .reduce((sum, e) => sum + e.boxes_requested * PRICE_PER_BOX_CENTS, 0);
+
+    const roundTotals: Record<string, number> = {};
+    for (const r of ROUNDS) {
+      roundTotals[r.value] = paidPayments
+        .filter((p) => p.paid_from === c.value && p.round === r.value)
+        .reduce((sum, p) => sum + p.amount_cents, 0);
+    }
+
+    const totalPaidOut = Object.values(roundTotals).reduce((a, b) => a + b, 0);
+    const remaining = incomingCents - totalPaidOut;
+
+    return { ...c, incomingCents, roundTotals, remaining };
+  });
+
+  const fmt = (cents: number) => `$${(cents / 100).toLocaleString()}`;
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">
+        Collector Summary
+      </h3>
+
+      <div className="border border-[hsl(215_30%_16%)] rounded-lg overflow-hidden overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="bg-white/[0.03] text-left">
+              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Name</th>
+              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground text-right">Initial</th>
+              {ROUNDS.map((r) => (
+                <th key={r.value} className="px-2 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground text-right">
+                  {r.label}
+                </th>
+              ))}
+              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground text-right">Remaining</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.value} className="border-t border-[hsl(215_30%_14%)]">
+                <td className="px-3 py-2.5 font-medium text-foreground">{row.label}</td>
+                <td className="px-3 py-2.5 text-right font-mono-display text-foreground">{fmt(row.incomingCents)}</td>
+                {ROUNDS.map((r) => (
+                  <td key={r.value} className="px-2 py-2.5 text-right font-mono-display text-destructive/80">
+                    {row.roundTotals[r.value] > 0 ? `-${fmt(row.roundTotals[r.value])}` : "—"}
+                  </td>
+                ))}
+                <td className={`px-3 py-2.5 text-right font-mono-display font-bold ${
+                  row.remaining >= 0 ? "text-accent" : "text-destructive"
+                }`}>
+                  {fmt(row.remaining)}
                 </td>
               </tr>
             ))}

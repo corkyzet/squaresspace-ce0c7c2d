@@ -137,12 +137,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: entrant } = await supabase
       .from("entrants")
-      .select("id, name")
+      .select("id, name, collected_by")
       .eq("season_id", activeSeason.id)
       .eq("email", email)
       .maybeSingle();
 
     if (entrant) {
+      if (!entrant.collected_by) {
+        return { success: false, error: "UNPAID" };
+      }
       const u: AuthUser = { email, name: entrant.name, isAdmin: false };
       setUser(u);
       saveSession(u);

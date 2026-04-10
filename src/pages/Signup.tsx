@@ -198,7 +198,7 @@ export default function Signup() {
                 <SelectContent>
                   {VENMO_HANDLES.map((v) => (
                     <SelectItem key={v.value} value={v.value}>
-                      {v.name} ({v.handle})
+                      {v.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
