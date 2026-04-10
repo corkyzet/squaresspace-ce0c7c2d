@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_totp: {
+        Row: {
+          user_id: string
+          encrypted_secret: string
+          is_enabled: boolean
+          created_at: string
+        }
+        Insert: {
+          user_id: string
+          encrypted_secret: string
+          is_enabled?: boolean
+          created_at?: string
+        }
+        Update: {
+          user_id?: string
+          encrypted_secret?: string
+          is_enabled?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
       admin_emails: {
         Row: {
           id: string
@@ -120,6 +141,24 @@ export type Database = {
           round?: string | null
           start_time?: string | null
           status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pool_config: {
+        Row: {
+          key: string
+          value: Json
+          updated_at: string
+        }
+        Insert: {
+          key: string
+          value: Json
+          updated_at?: string
+        }
+        Update: {
+          key?: string
+          value?: Json
           updated_at?: string
         }
         Relationships: []
@@ -245,7 +284,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

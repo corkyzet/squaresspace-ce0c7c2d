@@ -1,4 +1,10 @@
-project_id = "siqhidpvtfbspdugjefm"
+project_id = "udiaqajejrvfbpfhscdz"
 
 [functions.fetch-scores]
 verify_jwt = false
+
+[functions.setup-totp]
+verify_jwt = true
+
+[functions.verify-totp]
+verify_jwt = true

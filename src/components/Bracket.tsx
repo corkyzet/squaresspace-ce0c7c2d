@@ -1,6 +1,7 @@
 import React from "react";
 import { type Game } from "@/hooks/useSquares";
 import { Trophy } from "lucide-react";
+import { usePoolConfig, type PrizeStructure } from "@/hooks/usePoolConfig";
 
 interface BracketProps {
   games: Game[];
@@ -14,53 +15,55 @@ type RoundConfig = {
   matchFn: (round: string) => boolean;
 };
 
-const ROUNDS: RoundConfig[] = [
-  {
-    key: "r64",
-    label: "Round of 64",
-    prize: 50,
-    matchFn: (r) => r.includes("1st round") || (r.includes("round") && !r.includes("2nd") && !r.includes("second") && !r.includes("32") && !r.includes("sweet") && !r.includes("elite") && !r.includes("final") && !r.includes("championship") && !r.includes("semifinal")),
-  },
-  {
-    key: "r32",
-    label: "Round of 32",
-    prize: 100,
-    matchFn: (r) => r.includes("2nd round") || r.includes("second round") || r.includes("round of 32"),
-  },
-  {
-    key: "s16",
-    label: "Sweet 16",
-    prize: 200,
-    matchFn: (r) => r.includes("sweet 16") || r.includes("sweet sixteen") || r.includes("regional semifinal"),
-  },
-  {
-    key: "e8",
-    label: "Elite 8",
-    prize: 400,
-    matchFn: (r) => r.includes("elite eight") || r.includes("elite 8") || r.includes("regional final"),
-  },
-  {
-    key: "f4",
-    label: "Final Four",
-    prize: 800,
-    matchFn: (r) => (r.includes("final four") || r.includes("semifinal")) && !r.includes("regional"),
-  },
-  {
-    key: "champ",
-    label: "Championship",
-    prize: 1500,
-    matchFn: (r) => r.includes("national championship") && !r.includes("final four") && !r.includes("semifinal"),
-  },
-];
+function buildRounds(ps: PrizeStructure): RoundConfig[] {
+  return [
+    {
+      key: "r64",
+      label: "Round of 64",
+      prize: ps.R1 / 100,
+      matchFn: (r) => r.includes("1st round") || (r.includes("round") && !r.includes("2nd") && !r.includes("second") && !r.includes("32") && !r.includes("sweet") && !r.includes("elite") && !r.includes("final") && !r.includes("championship") && !r.includes("semifinal")),
+    },
+    {
+      key: "r32",
+      label: "Round of 32",
+      prize: ps.R2 / 100,
+      matchFn: (r) => r.includes("2nd round") || r.includes("second round") || r.includes("round of 32"),
+    },
+    {
+      key: "s16",
+      label: "Sweet 16",
+      prize: ps.SS / 100,
+      matchFn: (r) => r.includes("sweet 16") || r.includes("sweet sixteen") || r.includes("regional semifinal"),
+    },
+    {
+      key: "e8",
+      label: "Elite 8",
+      prize: ps.EE / 100,
+      matchFn: (r) => r.includes("elite eight") || r.includes("elite 8") || r.includes("regional final"),
+    },
+    {
+      key: "f4",
+      label: "Final Four",
+      prize: ps.FF / 100,
+      matchFn: (r) => (r.includes("final four") || r.includes("semifinal")) && !r.includes("regional"),
+    },
+    {
+      key: "champ",
+      label: "Championship",
+      prize: ps.F / 100,
+      matchFn: (r) => r.includes("national championship") && !r.includes("final four") && !r.includes("semifinal"),
+    },
+  ];
+}
 
-function classifyRound(round: string | null): RoundConfig | null {
-  if (!round) return ROUNDS[0]; // default to R64
+function classifyRound(round: string | null, rounds: RoundConfig[]): RoundConfig | null {
+  if (!round) return rounds[0];
   const r = round.toLowerCase();
   if (r.includes("first four")) return null;
-  for (const rc of [...ROUNDS].reverse()) {
+  for (const rc of [...rounds].reverse()) {
     if (rc.matchFn(r)) return rc;
   }
-  return ROUNDS[0];
+  return rounds[0];
 }
 
 function getRegion(round: string | null): string {
@@ -75,7 +78,7 @@ function getRegion(round: string | null): string {
   return "Unknown";
 }
 
-function BracketGame({ game, findOwner }: { game: Game; findOwner: (w: number, l: number) => string | null }) {
+function BracketGame({ game, findOwner, rounds, reversePrize }: { game: Game; findOwner: (w: number, l: number) => string | null; rounds: RoundConfig[]; reversePrize: number }) {
   const isFinal = game.status === "Final";
   const winScore = isFinal ? Math.max(game.home_score, game.away_score) : null;
   const loseScore = isFinal ? Math.min(game.home_score, game.away_score) : null;
@@ -83,7 +86,7 @@ function BracketGame({ game, findOwner }: { game: Game; findOwner: (w: number, l
   const loseDigit = loseScore !== null ? loseScore % 10 : null;
   const squareOwner = winDigit !== null && loseDigit !== null ? findOwner(winDigit, loseDigit) : null;
 
-  const isChampGame = classifyRound(game.round)?.key === "champ";
+  const isChampGame = classifyRound(game.round, rounds)?.key === "champ";
   const reverseOwner = isChampGame && winDigit !== null && loseDigit !== null ? findOwner(loseDigit, winDigit) : null;
 
   const homeWon = isFinal && game.home_score > game.away_score;
@@ -123,7 +126,7 @@ function BracketGame({ game, findOwner }: { game: Game; findOwner: (w: number, l
         <div className="flex items-center gap-1 mt-0.5">
           <Trophy className="w-2.5 h-2.5 text-accent" />
           <span className="text-[9px] text-accent font-medium truncate">
-            {squareOwner || "Unclaimed"}{isChampGame ? " ($1,500)" : ""}
+            {squareOwner || "Unclaimed"}{isChampGame ? ` ($${rounds.find(r => r.key === "champ")?.prize.toLocaleString() ?? "1,500"})` : ""}
           </span>
         </div>
       )}
@@ -131,7 +134,7 @@ function BracketGame({ game, findOwner }: { game: Game; findOwner: (w: number, l
         <div className="flex items-center gap-1 mt-0.5">
           <Trophy className="w-2.5 h-2.5 text-[hsl(200,90%,60%)]" />
           <span className="text-[9px] text-[hsl(200,90%,60%)] font-medium truncate">
-            {reverseOwner || "Unclaimed"} ($500 reverse)
+            {reverseOwner || "Unclaimed"} (${reversePrize.toLocaleString()} reverse)
           </span>
         </div>
       )}
@@ -140,21 +143,22 @@ function BracketGame({ game, findOwner }: { game: Game; findOwner: (w: number, l
 }
 
 export const Bracket = React.memo(function Bracket({ games, findOwner }: BracketProps) {
-  // Filter out First Four
+  const config = usePoolConfig();
+  const ROUNDS = buildRounds(config.prizeStructure);
+  const reversePrize = config.prizeStructure.Rev / 100;
+
   const tourneyGames = games.filter((g) => {
-    const rc = classifyRound(g.round);
+    const rc = classifyRound(g.round, ROUNDS);
     if (rc === null) return false;
-    // Hide games that haven't been set yet (still "Scheduled" with no real teams/scores)
     if (g.status === "Scheduled" && g.home_score === 0 && g.away_score === 0) return false;
     return true;
   });
 
-  // Group by round
   const gamesByRound = ROUNDS.map((rc) => ({
     ...rc,
     games: tourneyGames
       .filter((g) => {
-        const grc = classifyRound(g.round);
+        const grc = classifyRound(g.round, ROUNDS);
         return grc?.key === rc.key;
       })
       .sort((a, b) => {
@@ -207,7 +211,7 @@ export const Bracket = React.memo(function Bracket({ games, findOwner }: Bracket
                       </span>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                         {regionGames.map((game) => (
-                          <BracketGame key={game.id || game.espn_id || `${game.home_team}-${game.away_team}`} game={game} findOwner={findOwner} />
+                          <BracketGame key={game.id || game.espn_id || `${game.home_team}-${game.away_team}`} game={game} findOwner={findOwner} rounds={ROUNDS} reversePrize={reversePrize} />
                         ))}
                       </div>
                     </div>
@@ -222,7 +226,7 @@ export const Bracket = React.memo(function Bracket({ games, findOwner }: Bracket
                   return (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                       {unknownGames.map((game) => (
-                        <BracketGame key={game.id || game.espn_id || `${game.home_team}-${game.away_team}`} game={game} findOwner={findOwner} />
+                        <BracketGame key={game.id || game.espn_id || `${game.home_team}-${game.away_team}`} game={game} findOwner={findOwner} rounds={ROUNDS} reversePrize={reversePrize} />
                       ))}
                     </div>
                   );
@@ -231,7 +235,7 @@ export const Bracket = React.memo(function Bracket({ games, findOwner }: Bracket
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-lg">
                 {roundGroup.games.map((game) => (
-                  <BracketGame key={game.id || game.espn_id || `${game.home_team}-${game.away_team}`} game={game} findOwner={findOwner} />
+                  <BracketGame key={game.id || game.espn_id || `${game.home_team}-${game.away_team}`} game={game} findOwner={findOwner} rounds={ROUNDS} reversePrize={reversePrize} />
                 ))}
               </div>
             )}

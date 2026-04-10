@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ArrowUpRight, ArrowDownLeft, Plus, Check, X, Trash2, Pencil } from "lucide-react";
+import { usePoolConfig, type PrizeStructure } from "@/hooks/usePoolConfig";
 
 interface PaymentTrackerProps {
   seasonId: string;
@@ -31,26 +32,14 @@ interface Entrant {
   collected_by: string | null;
 }
 
-const COLLECTORS = [
-  { value: "corey", label: "Corey" },
-  { value: "joe", label: "Joe" },
-  { value: "coop", label: "Coop" },
-];
-
-const ROUNDS = [
-  { value: "R1", label: "R1" },
-  { value: "R2", label: "R2" },
-  { value: "SS", label: "SS" },
-  { value: "EE", label: "EE" },
-  { value: "FF", label: "FF" },
-  { value: "F", label: "F" },
-  { value: "Rev", label: "Rev" },
-];
-
-const PRICE_PER_BOX_CENTS = 10000;
+const ROUND_KEYS: (keyof PrizeStructure)[] = ["R1", "R2", "SS", "EE", "FF", "F", "Rev"];
 
 export function PaymentTracker({ seasonId }: PaymentTrackerProps) {
   const queryClient = useQueryClient();
+  const config = usePoolConfig();
+  const COLLECTORS = config.collectors;
+  const ROUNDS = ROUND_KEYS.map((k) => ({ value: k, label: k }));
+  const PRICE_PER_BOX_CENTS = config.pricePerBoxCents;
 
   const { data: payments = [] } = useQuery({
     queryKey: ["payments", seasonId],
@@ -90,15 +79,22 @@ export function PaymentTracker({ seasonId }: PaymentTrackerProps) {
         seasonId={seasonId}
         entrantName={entrantName}
         queryClient={queryClient}
+        collectors={COLLECTORS}
+        rounds={ROUNDS}
       />
       <IncomingPayments
         entrants={entrants}
         seasonId={seasonId}
         queryClient={queryClient}
+        collectors={COLLECTORS}
+        pricePerBoxCents={PRICE_PER_BOX_CENTS}
       />
       <SummaryTable
         payments={payments}
         entrants={entrants}
+        collectors={COLLECTORS}
+        rounds={ROUNDS}
+        pricePerBoxCents={PRICE_PER_BOX_CENTS}
       />
     </div>
   );
@@ -112,12 +108,16 @@ function OutgoingPayments({
   seasonId,
   entrantName,
   queryClient,
+  collectors,
+  rounds,
 }: {
   payments: Payment[];
   entrants: Entrant[];
   seasonId: string;
   entrantName: (id: string) => string;
   queryClient: ReturnType<typeof useQueryClient>;
+  collectors: { value: string; label: string }[];
+  rounds: { value: string; label: string }[];
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editStatus, setEditStatus] = useState("");
@@ -199,7 +199,7 @@ function OutgoingPayments({
   });
 
   const collectorLabel = (val: string | null) =>
-    COLLECTORS.find((c) => c.value === val)?.label ?? "—";
+    collectors.find((c) => c.value === val)?.label ?? "—";
 
   return (
     <div className="space-y-4">
@@ -239,7 +239,7 @@ function OutgoingPayments({
             <Select value={addRound} onValueChange={setAddRound}>
               <SelectTrigger className="h-8 text-xs rounded-lg"><SelectValue placeholder="—" /></SelectTrigger>
               <SelectContent>
-                {ROUNDS.map((r) => (
+                {rounds.map((r) => (
                   <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
                 ))}
               </SelectContent>
@@ -250,7 +250,7 @@ function OutgoingPayments({
             <Select value={addPaidFrom} onValueChange={setAddPaidFrom}>
               <SelectTrigger className="h-8 text-xs rounded-lg"><SelectValue placeholder="—" /></SelectTrigger>
               <SelectContent>
-                {COLLECTORS.map((c) => (
+                {collectors.map((c) => (
                   <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
                 ))}
               </SelectContent>
@@ -307,7 +307,7 @@ function OutgoingPayments({
                         <SelectTrigger className="h-7 text-xs rounded-lg w-16"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">—</SelectItem>
-                          {ROUNDS.map((r) => (
+                          {rounds.map((r) => (
                             <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
                           ))}
                         </SelectContent>
@@ -318,7 +318,7 @@ function OutgoingPayments({
                         <SelectTrigger className="h-7 text-xs rounded-lg w-24"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">—</SelectItem>
-                          {COLLECTORS.map((c) => (
+                          {collectors.map((c) => (
                             <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
                           ))}
                         </SelectContent>
@@ -382,10 +382,14 @@ function IncomingPayments({
   entrants,
   seasonId,
   queryClient,
+  collectors,
+  pricePerBoxCents,
 }: {
   entrants: Entrant[];
   seasonId: string;
   queryClient: ReturnType<typeof useQueryClient>;
+  collectors: { value: string; label: string }[];
+  pricePerBoxCents: number;
 }) {
   const updateCollector = useMutation({
     mutationFn: async ({ entrantId, value }: { entrantId: string; value: string | null }) => {
@@ -401,8 +405,8 @@ function IncomingPayments({
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const totalDue = entrants.reduce((sum, e) => sum + e.boxes_requested * PRICE_PER_BOX_CENTS, 0);
-  const totalCollected = entrants.filter((e) => e.collected_by).reduce((sum, e) => sum + e.boxes_requested * PRICE_PER_BOX_CENTS, 0);
+  const totalDue = entrants.reduce((sum, e) => sum + e.boxes_requested * pricePerBoxCents, 0);
+  const totalCollected = entrants.filter((e) => e.collected_by).reduce((sum, e) => sum + e.boxes_requested * pricePerBoxCents, 0);
 
   return (
     <div className="space-y-4">
@@ -438,12 +442,12 @@ function IncomingPayments({
                   {e.name}
                   {e.who_will_pay && (
                     <span className="ml-2 text-[9px] text-muted-foreground">
-                      (will pay {COLLECTORS.find((c) => c.value === e.who_will_pay)?.label ?? e.who_will_pay})
+                      (will pay {collectors.find((c) => c.value === e.who_will_pay)?.label ?? e.who_will_pay})
                     </span>
                   )}
                 </td>
                 <td className="px-3 py-2 text-right font-mono-display">
-                  ${((e.boxes_requested * PRICE_PER_BOX_CENTS) / 100).toFixed(0)}
+                  ${((e.boxes_requested * pricePerBoxCents) / 100).toFixed(0)}
                 </td>
                 <td className="px-3 py-2">
                   <Select
@@ -457,7 +461,7 @@ function IncomingPayments({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">—</SelectItem>
-                      {COLLECTORS.map((c) => (
+                      {collectors.map((c) => (
                         <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
                       ))}
                     </SelectContent>
@@ -477,19 +481,25 @@ function IncomingPayments({
 function SummaryTable({
   payments,
   entrants,
+  collectors,
+  rounds,
+  pricePerBoxCents,
 }: {
   payments: Payment[];
   entrants: Entrant[];
+  collectors: { value: string; label: string }[];
+  rounds: { value: string; label: string }[];
+  pricePerBoxCents: number;
 }) {
   const paidPayments = payments.filter((p) => p.status === "paid");
 
-  const rows = COLLECTORS.map((c) => {
+  const rows = collectors.map((c) => {
     const incomingCents = entrants
       .filter((e) => e.collected_by === c.value)
-      .reduce((sum, e) => sum + e.boxes_requested * PRICE_PER_BOX_CENTS, 0);
+      .reduce((sum, e) => sum + e.boxes_requested * pricePerBoxCents, 0);
 
     const roundTotals: Record<string, number> = {};
-    for (const r of ROUNDS) {
+    for (const r of rounds) {
       roundTotals[r.value] = paidPayments
         .filter((p) => p.paid_from === c.value && p.round === r.value)
         .reduce((sum, p) => sum + p.amount_cents, 0);
@@ -515,7 +525,7 @@ function SummaryTable({
             <tr className="bg-white/[0.03] text-left">
               <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Name</th>
               <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground text-right">Initial</th>
-              {ROUNDS.map((r) => (
+              {rounds.map((r) => (
                 <th key={r.value} className="px-2 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground text-right">
                   {r.label}
                 </th>
@@ -528,7 +538,7 @@ function SummaryTable({
               <tr key={row.value} className="border-t border-[hsl(215_30%_14%)]">
                 <td className="px-3 py-2.5 font-medium text-foreground">{row.label}</td>
                 <td className="px-3 py-2.5 text-right font-mono-display text-foreground">{fmt(row.incomingCents)}</td>
-                {ROUNDS.map((r) => (
+                {rounds.map((r) => (
                   <td key={r.value} className="px-2 py-2.5 text-right font-mono-display text-destructive/80">
                     {row.roundTotals[r.value] > 0 ? `-${fmt(row.roundTotals[r.value])}` : "—"}
                   </td>

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useMemo, useRef } from "react";
+import { usePoolConfig, type PrizeStructure } from "@/hooks/usePoolConfig";
 
 export type Square = {
   id: string;
@@ -39,15 +40,16 @@ const DEFAULT_LOSE_ORDER = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 const REFRESH_INTERVAL_MS = 60_000;
 const MUTATION_GUARD_MS = 5_000;
 
-function getRoundPrize(round: string | null): number {
-  if (!round) return 50;
+function getRoundPrize(round: string | null, ps: PrizeStructure): number {
+  const defaultPrize = ps.R1 / 100;
+  if (!round) return defaultPrize;
   const r = round.toLowerCase();
-  if (r.includes("final four") || r.includes("semifinal")) return 800;
-  if (r.includes("national championship") || (r.includes("championship") && !r.includes("region") && !r.includes("round") && !r.includes("final four"))) return 1500;
-  if (r.includes("elite eight") || r.includes("elite 8") || r.includes("regional final")) return 400;
-  if (r.includes("sweet 16") || r.includes("sweet sixteen") || r.includes("regional semifinal")) return 200;
-  if (r.includes("2nd round") || r.includes("second round") || r.includes("3rd round") || r.includes("round of 32")) return 100;
-  return 50;
+  if (r.includes("final four") || r.includes("semifinal")) return ps.FF / 100;
+  if (r.includes("national championship") || (r.includes("championship") && !r.includes("region") && !r.includes("round") && !r.includes("final four"))) return ps.F / 100;
+  if (r.includes("elite eight") || r.includes("elite 8") || r.includes("regional final")) return ps.EE / 100;
+  if (r.includes("sweet 16") || r.includes("sweet sixteen") || r.includes("regional semifinal")) return ps.SS / 100;
+  if (r.includes("2nd round") || r.includes("second round") || r.includes("3rd round") || r.includes("round of 32")) return ps.R2 / 100;
+  return defaultPrize;
 }
 
 function isChampionship(round: string | null): boolean {
@@ -59,6 +61,7 @@ function isChampionship(round: string | null): boolean {
 export function useSquares() {
   const queryClient = useQueryClient();
   const lastMutationTime = useRef(0);
+  const config = usePoolConfig();
 
   // Fetch the active season
   const { data: activeSeason } = useQuery({
@@ -156,6 +159,9 @@ export function useSquares() {
 
   // Memoize all derived data
   const { findOwner, getWinCount, leaderboard } = useMemo(() => {
+    const ps = config.prizeStructure;
+    const revPrize = ps.Rev / 100;
+
     const winningGames = games.filter(
       (g) => g.status === "Final" && g.round?.toLowerCase() !== "first four"
     );
@@ -164,9 +170,9 @@ export function useSquares() {
     winningGames.forEach((g) => {
       const wDigit = Math.max(g.home_score, g.away_score) % 10;
       const lDigit = Math.min(g.home_score, g.away_score) % 10;
-      digits.push({ w: wDigit, l: lDigit, prize: getRoundPrize(g.round) });
+      digits.push({ w: wDigit, l: lDigit, prize: getRoundPrize(g.round, ps) });
       if (isChampionship(g.round)) {
-        digits.push({ w: lDigit, l: wDigit, prize: 500 });
+        digits.push({ w: lDigit, l: wDigit, prize: revPrize });
       }
     });
 
@@ -199,7 +205,7 @@ export function useSquares() {
       getWinCount: _getWinCount,
       leaderboard: _leaderboard,
     };
-  }, [games, squares]);
+  }, [games, squares, config.prizeStructure]);
 
   return {
     squares,

@@ -1,41 +1,36 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogIn, ExternalLink } from "lucide-react";
-
-const VENMO_HANDLES = [
-  { name: "Corey", handle: "@corey-zettler" },
-  { name: "Joe", handle: "@joe-liebeskind" },
-  { name: "Coop", handle: "@David-Cooper-1" },
-];
+import { LogIn, ExternalLink, Mail } from "lucide-react";
+import { usePoolConfig } from "@/hooks/usePoolConfig";
 
 export default function Login() {
-  const { login } = useAuth();
-  const navigate = useNavigate();
+  const { sendMagicLink, unpaidEmail } = useAuth();
+  const config = usePoolConfig();
 
   const [email, setEmail] = useState("");
-  const [signingIn, setSigningIn] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [linkSent, setLinkSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showUnpaid, setShowUnpaid] = useState(false);
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    setShowUnpaid(false);
-    setSigningIn(true);
-    const result = await login(email);
-    setSigningIn(false);
+    setLinkSent(false);
+    setSending(true);
+    const result = await sendMagicLink(email);
+    setSending(false);
     if (result.success) {
-      navigate("/");
-    } else if (result.error === "UNPAID") {
-      setShowUnpaid(true);
+      setLinkSent(true);
     } else {
-      setError(result.error ?? "Login failed.");
+      setError(result.error ?? "Failed to send login link.");
     }
   }
+
+  const venmoHandles = config.venmoHandles ?? [];
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center fd-gradient px-4">
@@ -53,50 +48,71 @@ export default function Login() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <Input
-              type="email"
-              placeholder="Enter your email..."
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="bg-background/50 border-[hsl(215_30%_20%)] text-foreground rounded-lg"
-              autoFocus
-              required
-            />
-            {error && (
-              <p className="text-xs text-destructive font-medium">{error}</p>
-            )}
-            {showUnpaid && (
-              <div className="space-y-3 text-center">
-                <p className="text-sm text-foreground font-semibold">
-                  Once you pay, you will unlock access.
-                </p>
-                <a
-                  href="https://www.venmo.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white font-bold text-sm transition-all hover:opacity-90"
-                  style={{ backgroundColor: "#008CFF" }}
-                >
-                  <VenmoLogo />
-                  Open Venmo
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
+          {linkSent ? (
+            <div className="space-y-4 text-center py-2">
+              <Mail className="w-10 h-10 text-primary mx-auto" />
+              <p className="text-sm text-foreground font-semibold">Check your email</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                We sent a login link to <span className="text-foreground">{email}</span>.
+                Click the link to sign in.
+              </p>
+              <button
+                onClick={() => { setLinkSent(false); setEmail(""); }}
+                className="text-xs text-muted-foreground hover:text-primary transition-colors underline underline-offset-4"
+              >
+                Use a different email
+              </button>
+            </div>
+          ) : unpaidEmail ? (
+            <div className="space-y-4 text-center py-2">
+              <p className="text-sm text-foreground font-semibold">
+                Once you pay, you will unlock access.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Signed up as <span className="text-foreground">{unpaidEmail}</span>
+              </p>
+              <a
+                href="https://www.venmo.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white font-bold text-sm transition-all hover:opacity-90"
+                style={{ backgroundColor: "#008CFF" }}
+              >
+                <VenmoLogo />
+                Open Venmo
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+              {venmoHandles.length > 0 && (
                 <div className="text-left bg-white/[0.03] border border-[hsl(215_30%_16%)] rounded-lg p-3 space-y-1.5">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Venmo Handles</p>
-                  {VENMO_HANDLES.map((v) => (
+                  {venmoHandles.map((v) => (
                     <div key={v.name} className="flex items-center justify-between text-xs">
                       <span className="text-foreground">{v.name}</span>
                       <span className="font-mono-display text-primary">{v.handle}</span>
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-            <Button type="submit" disabled={signingIn} className="w-full fd-btn-primary text-white font-semibold rounded-lg">
-              {signingIn ? "Checking..." : "Sign In"}
-            </Button>
-          </form>
+              )}
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <Input
+                type="email"
+                placeholder="Enter your email..."
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="bg-background/50 border-[hsl(215_30%_20%)] text-foreground rounded-lg"
+                autoFocus
+                required
+              />
+              {error && (
+                <p className="text-xs text-destructive font-medium">{error}</p>
+              )}
+              <Button type="submit" disabled={sending} className="w-full fd-btn-primary text-white font-semibold rounded-lg">
+                {sending ? "Sending link..." : "Send Login Link"}
+              </Button>
+            </form>
+          )}
           <div className="mt-4 text-center">
             <Link
               to="/signup"

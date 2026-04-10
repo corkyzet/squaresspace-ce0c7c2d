@@ -8,7 +8,8 @@ import { EntrantsList } from "@/components/admin/EntrantsList";
 import { GridManager } from "@/components/admin/GridManager";
 import { PaymentTracker } from "@/components/admin/PaymentTracker";
 import { SeasonSelector } from "@/components/admin/SeasonSelector";
-import { ArrowLeft, LogOut, Users, Grid3X3, DollarSign, CalendarDays } from "lucide-react";
+import { TwoFactorSetup } from "@/components/admin/TwoFactorSetup";
+import { ArrowLeft, LogOut, Users, Grid3X3, DollarSign, CalendarDays, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface Season {
@@ -88,6 +89,9 @@ export default function Admin() {
               <TabsTrigger value="seasons" className="gap-1 text-xs font-mono-display">
                 <CalendarDays className="w-3 h-3" /> Seasons
               </TabsTrigger>
+              <TabsTrigger value="settings" className="gap-1 text-xs font-mono-display">
+                <Settings className="w-3 h-3" /> Settings
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="entrants">
@@ -104,6 +108,10 @@ export default function Admin() {
 
             <TabsContent value="seasons">
               <SeasonSelector activeSeasonId={viewingSeasonId} onSelectSeason={setSelectedSeasonId} />
+            </TabsContent>
+
+            <TabsContent value="settings">
+              <TwoFactorSetup />
             </TabsContent>
           </Tabs>
         )}

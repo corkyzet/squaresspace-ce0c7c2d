@@ -7,14 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { UserPlus, CheckCircle2, ExternalLink } from "lucide-react";
-
-const VENMO_HANDLES = [
-  { name: "Corey", value: "corey", handle: "@corey-zettler" },
-  { name: "Joe", value: "joe", handle: "@joe-liebeskind" },
-  { name: "Coop", value: "coop", handle: "@David-Cooper-1" },
-];
+import { usePoolConfig } from "@/hooks/usePoolConfig";
 
 export default function Signup() {
+  const config = usePoolConfig();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [boxes, setBoxes] = useState("1");
@@ -22,6 +18,8 @@ export default function Signup() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const pricePerBox = config.pricePerBoxCents / 100;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -109,15 +107,17 @@ export default function Signup() {
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
 
-            <div className="text-left bg-white/[0.03] border border-[hsl(215_30%_16%)] rounded-lg p-4 space-y-2">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Venmo Handles</p>
-              {VENMO_HANDLES.map((v) => (
-                <div key={v.value} className="flex items-center justify-between text-sm">
-                  <span className="text-foreground font-medium">{v.name}</span>
-                  <span className="font-mono-display text-primary">{v.handle}</span>
-                </div>
-              ))}
-            </div>
+            {config.venmoHandles.length > 0 && (
+              <div className="text-left bg-white/[0.03] border border-[hsl(215_30%_16%)] rounded-lg p-4 space-y-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Venmo Handles</p>
+                {config.venmoHandles.map((v) => (
+                  <div key={v.value} className="flex items-center justify-between text-sm">
+                    <span className="text-foreground font-medium">{v.name}</span>
+                    <span className="font-mono-display text-primary">{v.handle}</span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <Link
               to="/login"
@@ -173,16 +173,16 @@ export default function Signup() {
 
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                How many boxes? (max 3) — $100 per box
+                How many boxes? (max 3) — ${pricePerBox} per box
               </label>
               <Select value={boxes} onValueChange={setBoxes}>
                 <SelectTrigger className="bg-background/50 border-[hsl(215_30%_20%)] rounded-lg">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">1 box — $100</SelectItem>
-                  <SelectItem value="2">2 boxes — $200</SelectItem>
-                  <SelectItem value="3">3 boxes — $300</SelectItem>
+                  <SelectItem value="1">1 box — ${pricePerBox}</SelectItem>
+                  <SelectItem value="2">2 boxes — ${pricePerBox * 2}</SelectItem>
+                  <SelectItem value="3">3 boxes — ${pricePerBox * 3}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -196,24 +196,26 @@ export default function Signup() {
                   <SelectValue placeholder="Select..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {VENMO_HANDLES.map((v) => (
-                    <SelectItem key={v.value} value={v.value}>
-                      {v.name}
+                  {config.collectors.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="bg-white/[0.03] border border-[hsl(215_30%_16%)] rounded-lg p-3 space-y-1.5">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Venmo Handles</p>
-              {VENMO_HANDLES.map((v) => (
-                <div key={v.value} className="flex items-center justify-between text-xs">
-                  <span className="text-foreground">{v.name}</span>
-                  <span className="font-mono-display text-primary">{v.handle}</span>
-                </div>
-              ))}
-            </div>
+            {config.venmoHandles.length > 0 && (
+              <div className="bg-white/[0.03] border border-[hsl(215_30%_16%)] rounded-lg p-3 space-y-1.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Venmo Handles</p>
+                {config.venmoHandles.map((v) => (
+                  <div key={v.value} className="flex items-center justify-between text-xs">
+                    <span className="text-foreground">{v.name}</span>
+                    <span className="font-mono-display text-primary">{v.handle}</span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {error && (
               <p className="text-xs text-destructive font-medium">{error}</p>
